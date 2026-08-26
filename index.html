@@ -1,38 +1,912 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Demo Store | Products</title>
-  <link rel="stylesheet" href="style.css">
-  <script>
-    window.digitalData = {
-              pageInfo : {
-              pageName : "HomePage",
-              siteSection : "home"
-             }
-            };
+<meta charset="UTF-8">
+<title>The Daily Ledger</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Karla:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
 
-  </script>
-  <script src="https://assets.adobedtm.com/091296e21369/4d9ba589fbd6/launch-0ab512d58799-development.min.js" async></script>
+:root{
+  --bg: #FAF3E8;
+  --surface: #FFFDF9;
+  --surface-alt: #F1E6D6;
+  --ink: #3B332C;
+  --ink-soft: #8A7D6E;
+  --line: #E3D5C0;
+
+  --habit: #7C9473;
+  --habit-soft: #E4EADF;
+  --finance: #4E7E82;
+  --finance-soft: #DDEAEA;
+  --goals: #C9975A;
+  --goals-soft: #F3E4CC;
+  --tasks: #B4707A;
+  --tasks-soft: #F2E0E3;
+  --signature: #9B5F55;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background: var(--bg);
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(59,51,44,0.045) 1px, transparent 0);
+  background-size: 22px 22px;
+  color: var(--ink);
+  font-family: 'Karla', sans-serif;
+  min-height: 100vh;
+}
+
+.wrap{ max-width: 980px; margin: 0 auto; padding: 28px 20px 80px; }
+
+/* ---------- Header ---------- */
+.masthead{
+  display:flex; justify-content:space-between; align-items:flex-end;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 14px; margin-bottom: 6px;
+  flex-wrap: wrap; gap: 12px;
+}
+.masthead h1{
+  font-family:'Fraunces', serif; font-weight:700; font-size: 2.4rem;
+  margin:0; letter-spacing: -0.5px;
+}
+.masthead .sub{ font-size:0.8rem; color:var(--ink-soft); letter-spacing:1.5px; text-transform:uppercase; margin-top:4px;}
+.today-block{ text-align:right; }
+.today-block .date{ font-family:'Fraunces', serif; font-style:italic; font-size:1.05rem; }
+.today-block .role{ font-size:0.75rem; color:var(--ink-soft); }
+
+.mode-toggle{ margin-top:8px; display:flex; gap:6px; justify-content:flex-end; }
+.mode-btn{
+  font-family:'JetBrains Mono', monospace; font-size:0.7rem; padding:4px 10px;
+  border:1px solid var(--ink); border-radius:20px; background:transparent; cursor:pointer;
+  color: var(--ink); letter-spacing: 0.5px;
+}
+.mode-btn.active{ background: var(--ink); color: var(--surface); }
+
+/* ---------- Tabs ---------- */
+.tabs{
+  display:flex; gap:2px; margin: 22px 0 22px; background: var(--surface-alt);
+  border-radius: 14px; padding: 4px; flex-wrap: wrap;
+}
+.tab{
+  flex:1; min-width: 90px; text-align:center; padding:10px 8px; border-radius:10px;
+  cursor:pointer; font-weight:600; font-size:0.85rem; color: var(--ink-soft);
+  transition: all .15s ease; border:none; background:transparent; font-family:'Karla',sans-serif;
+}
+.tab.active{ background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(59,51,44,0.15); }
+
+.panel{ display:none; animation: fade .25s ease; }
+.panel.active{ display:block; }
+@keyframes fade{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+
+/* ---------- Cards ---------- */
+.card{
+  background: var(--surface); border:1px solid var(--line); border-radius: 16px;
+  padding: 20px; margin-bottom: 18px;
+}
+.card h2{
+  font-family:'Fraunces', serif; font-weight:600; font-size:1.25rem; margin:0 0 14px;
+  display:flex; align-items:center; gap:8px;
+}
+.dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+
+.grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+@media (max-width:700px){ .grid2{ grid-template-columns: 1fr; } }
+
+/* ---------- Forms ---------- */
+input[type=text], input[type=number], input[type=date], select{
+  font-family:'Karla',sans-serif; padding:9px 12px; border:1px solid var(--line);
+  border-radius:10px; background: var(--surface); color:var(--ink); font-size:0.9rem;
+}
+input:focus, select:focus{ outline:2px solid var(--ink-soft); outline-offset:1px; }
+button{ font-family:'Karla',sans-serif; cursor:pointer; }
+.add-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+.add-row input, .add-row select{ flex:1; min-width:110px; }
+.btn{
+  padding:9px 16px; border-radius:10px; border:none; background:var(--ink); color:var(--surface);
+  font-weight:600; font-size:0.85rem;
+}
+.btn.ghost{ background:transparent; border:1px solid var(--ink); color:var(--ink); }
+.icon-btn{ background:none; border:none; color:var(--ink-soft); font-size:1rem; cursor:pointer; padding:2px 6px; }
+.icon-btn:hover{ color: var(--signature); }
+
+/* ---------- Lists ---------- */
+.row{
+  display:flex; align-items:center; gap:10px; padding:10px 4px; border-bottom:1px solid var(--line);
+}
+.row:last-child{ border-bottom:none; }
+.row .name{ flex:1; font-weight:600; font-size:0.92rem; }
+.row .meta{ font-size:0.75rem; color:var(--ink-soft); font-family:'JetBrains Mono', monospace; }
+.check{
+  width:22px; height:22px; border-radius:7px; border:2px solid var(--ink-soft); cursor:pointer;
+  flex-shrink:0; display:flex; align-items:center; justify-content:center; background:var(--surface);
+}
+.check.done{ background: var(--habit); border-color: var(--habit); color:white; font-size:0.8rem; }
+.pill{ font-size:0.68rem; padding:3px 9px; border-radius:20px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; }
+.pill.high{ background:#F2DADA; color:#8C3A3A; }
+.pill.med{ background:var(--goals-soft); color:#8A5E22; }
+.pill.low{ background:var(--habit-soft); color:#4C6B45; }
+
+.empty{ color:var(--ink-soft); font-style:italic; font-size:0.88rem; padding:14px 4px; }
+
+/* ---------- Habit stamps ---------- */
+.habit-block{ margin-bottom:22px; }
+.habit-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.habit-head .htitle{ font-weight:700; font-size:0.95rem; }
+.streak{
+  font-family:'JetBrains Mono', monospace; font-size:0.75rem; background:var(--habit-soft);
+  color:#3E5A38; padding:3px 10px; border-radius:20px; font-weight:600;
+}
+.stamp-grid{ display:grid; grid-template-columns: repeat(15, 1fr); gap:5px; }
+@media (max-width:700px){ .stamp-grid{ grid-template-columns: repeat(10,1fr);} }
+.stamp{
+  aspect-ratio:1; border-radius:50%; border:1.5px dashed var(--line);
+  display:flex; align-items:center; justify-content:center; font-size:0.62rem;
+  color:var(--ink-soft); cursor:pointer; font-family:'JetBrains Mono', monospace;
+}
+.stamp.filled{
+  border-style:solid; border-color: var(--signature); background: var(--signature);
+  color:white; transform: rotate(var(--r,-4deg)); font-weight:700;
+}
+.stamp.today{ box-shadow:0 0 0 2px var(--ink); }
+
+/* ---------- Finance ---------- */
+.finance-cols{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+@media (max-width:750px){ .finance-cols{ grid-template-columns:1fr; } }
+.fin-summary{ display:flex; justify-content:space-between; background:var(--finance-soft); border-radius:12px; padding:14px 16px; margin-bottom:14px;}
+.fin-summary .big{ font-family:'Fraunces',serif; font-size:1.5rem; font-weight:700; }
+.fin-summary .lbl{ font-size:0.7rem; text-transform:uppercase; color:#3E5F62; letter-spacing:0.5px; }
+.bar-bg{ height:8px; background:var(--surface-alt); border-radius:6px; overflow:hidden; margin-top:6px;}
+.bar-fill{ height:100%; border-radius:6px; background:var(--finance); }
+.bar-fill.over{ background:#B4534A; }
+.fin-summary3{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; text-align:center; }
+.fin-summary3 .big{ font-size:1.25rem; }
+.cat-breakdown-row{ margin-bottom:6px; }
+.cat-breakdown-top{ display:flex; justify-content:space-between; font-size:0.75rem; color:var(--ink-soft); margin-bottom:3px; }
+.cat-bar-bg{ height:6px; background:var(--surface-alt); border-radius:6px; overflow:hidden; }
+.cat-bar-fill{ height:100%; background:var(--finance); border-radius:6px; }
+
+/* ---------- Goals ---------- */
+.goal-card{ border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:12px; }
+.goal-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+.goal-top .gname{ font-weight:700; }
+.goal-top .gdate{ font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--ink-soft); }
+.goal-bar-bg{ height:10px; background:var(--goals-soft); border-radius:8px; overflow:hidden; }
+.goal-bar-fill{ height:100%; background:var(--goals); border-radius:8px; }
+.goal-controls{ display:flex; justify-content:space-between; align-items:center; margin-top:8px; }
+.goal-pct{ font-family:'JetBrains Mono',monospace; font-size:0.8rem; font-weight:700; color:#8A5E22; }
+
+.sg-card{ border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:12px; background:var(--surface); }
+.sg-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.sg-top .sgname{ font-weight:700; }
+.sg-amounts{ font-family:'JetBrains Mono',monospace; font-size:0.78rem; color:var(--ink-soft); }
+.sg-bar-bg{ height:10px; background:var(--tasks-soft); border-radius:8px; overflow:hidden; margin:8px 0; }
+.sg-bar-fill{ height:100%; background:var(--signature); border-radius:8px; }
+.sg-footer{ display:flex; justify-content:space-between; align-items:center; font-size:0.78rem; color:var(--ink-soft); }
+
+/* ---------- Stats strip (Today) ---------- */
+.stats-strip{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:18px; }
+@media (max-width:700px){ .stats-strip{ grid-template-columns:1fr; } }
+.stat{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; text-align:center; }
+.stat .num{ font-family:'Fraunces',serif; font-size:2rem; font-weight:700; }
+.stat .lbl{ font-size:0.72rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--ink-soft); }
+
+.top-actions{ display:flex; justify-content:flex-end; margin-bottom:8px; }
+
+footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin-top:30px; font-family:'JetBrains Mono',monospace; }
+
+/* ---------- Print ---------- */
+@media print{
+  .tabs, .top-actions, .add-row, .icon-btn, .mode-toggle, .check{ display:none !important; }
+  .panel{ display:block !important; }
+  body{ background:white; }
+  .card{ break-inside:avoid; border:1px solid #ccc; }
+}
+/* ---------- Login overlay ---------- */
+#loginOverlay{
+  position:fixed; inset:0; background:var(--bg); z-index:999;
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+.login-card{
+  background:var(--surface); border:1px solid var(--line); border-radius:18px;
+  padding:32px; max-width:360px; width:100%; text-align:center;
+}
+.login-card h1{ font-family:'Fraunces',serif; font-size:1.6rem; margin:0 0 4px; }
+.login-card p{ color:var(--ink-soft); font-size:0.85rem; margin:0 0 20px; }
+.login-card input{ width:100%; margin-bottom:10px; }
+.login-card .btn{ width:100%; margin-top:6px; }
+.login-error{ color:#B4534A; font-size:0.8rem; margin-top:10px; min-height:1em; }
+.login-switch{ font-size:0.8rem; color:var(--ink-soft); margin-top:14px; cursor:pointer; text-decoration:underline; }
+</style>
 </head>
 <body>
 
-<h1>Demo Store</h1>
-
-<div class="product">
-  <h3>Phone</h3>
-  <p>$500</p>
-  <a href="product.html?id=1&name=Phone&price=500">View Product</a>
+<div id="loginOverlay">
+  <div class="login-card">
+    <h1>The Daily Ledger</h1>
+    <p id="loginSubtitle">Sign in to sync across your devices</p>
+    <input type="email" id="loginEmail" placeholder="Email">
+    <input type="password" id="loginPassword" placeholder="Password">
+    <button class="btn" id="loginBtn" onclick="doSignIn()">Sign in</button>
+    <div class="login-switch" id="loginSwitch" onclick="toggleLoginMode()">First time here? Create an account</div>
+    <div class="login-error" id="loginError"></div>
+  </div>
 </div>
 
-<div class="product">
-  <h3>Laptop</h3>
-  <p>$1000</p>
-  <a href="product.html?id=2&name=Laptop&price=1000">View Product</a>
+<div class="wrap" id="mainApp" style="display:none;">
+
+  <div class="masthead">
+    <div>
+      <h1>The Daily Ledger</h1>
+      <div class="sub">habits · tasks · money · goals</div>
+    </div>
+    <div class="today-block">
+      <div class="date" id="todayDate"></div>
+      <div class="role">Adobe Analytics Consultant</div>
+      <div class="mode-toggle">
+        <button class="mode-btn" id="modeOffice">Office</button>
+        <button class="mode-btn" id="modeWFH">WFH</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="top-actions">
+    <button class="btn ghost" onclick="window.print()">🖨 Print this week</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="today">Today</button>
+    <button class="tab" data-tab="habits">Habits</button>
+    <button class="tab" data-tab="tasks">Tasks</button>
+    <button class="tab" data-tab="finance">Finance</button>
+    <button class="tab" data-tab="goals">Goals</button>
+  </div>
+
+  <!-- TODAY -->
+  <div class="panel active" id="panel-today">
+    <div class="stats-strip">
+      <div class="stat"><div class="num" id="statTasks">0/0</div><div class="lbl">Tasks done today</div></div>
+      <div class="stat"><div class="num" id="statStreak">0</div><div class="lbl">Best current streak</div></div>
+      <div class="stat"><div class="num" id="statGoal">—</div><div class="lbl">Nearest goal deadline</div></div>
+    </div>
+    <div class="card">
+      <h2><span class="dot" style="background:var(--tasks)"></span>Quick add for today</h2>
+      <div class="add-row">
+        <input type="text" id="quickTaskInput" placeholder="e.g. Prep client analytics report...">
+        <button class="btn" onclick="quickAddTask()">Add task</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2><span class="dot" style="background:var(--tasks)"></span><span id="viewingLabel">Today</span></h2>
+      <div class="add-row" style="align-items:center;">
+        <button class="icon-btn" onclick="shiftViewDate(-1)" title="Previous day">← Prev</button>
+        <input type="date" id="viewDate">
+        <button class="icon-btn" onclick="shiftViewDate(1)" title="Next day">Next →</button>
+        <button class="btn ghost" onclick="jumpToday()">Jump to today</button>
+      </div>
+      <div style="font-weight:700; font-size:0.85rem; margin:14px 0 4px; color:var(--ink-soft);">Tasks</div>
+      <div id="todayTaskList"></div>
+      <div style="font-weight:700; font-size:0.85rem; margin:18px 0 4px; color:var(--ink-soft);">Habits</div>
+      <div id="todayHabitList"></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot" style="background:var(--goals)"></span>Today's Intention</h2>
+      <input type="text" id="intentionInput" placeholder="What's the one thing you want to focus on today?" style="width:100%;" onchange="setIntention(this.value)">
+    </div>
+
+    <div class="card">
+      <h2><span class="dot" style="background:var(--signature)"></span>Proud of today</h2>
+      <div class="add-row">
+        <input type="text" id="proudInput" placeholder="Something you did well today...">
+        <button class="btn" onclick="addProud()">Add</button>
+      </div>
+      <div id="proudList"></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot" style="background:var(--tasks)"></span>Household Chores</h2>
+      <div class="add-row">
+        <input type="text" id="choreNameInput" placeholder="e.g. Dishes, Laundry, Take out trash...">
+        <button class="btn" onclick="addChore()">Add chore</button>
+      </div>
+      <div id="choreList"></div>
+    </div>
+  </div>
+
+  <!-- HABITS -->
+  <div class="panel" id="panel-habits">
+    <div class="card">
+      <h2><span class="dot" style="background:var(--habit)"></span>Add a habit</h2>
+      <div class="add-row">
+        <input type="text" id="habitNameInput" placeholder="e.g. Read 20 minutes, No sugar, Gym...">
+        <button class="btn" onclick="addHabit()">Add habit</button>
+      </div>
+    </div>
+    <div id="habitsContainer"></div>
+  </div>
+
+  <!-- TASKS -->
+  <div class="panel" id="panel-tasks">
+    <div class="card">
+      <h2><span class="dot" style="background:var(--tasks)"></span>Add a task</h2>
+      <div class="add-row">
+        <input type="text" id="taskNameInput" placeholder="Task name...">
+        <select id="taskPriority"><option value="med">Medium</option><option value="high">High</option><option value="low">Low</option></select>
+        <input type="date" id="taskDate">
+        <button class="btn" onclick="addTask()">Add</button>
+      </div>
+      <div style="display:flex; gap:8px; margin-bottom:10px;">
+        <button class="btn ghost" onclick="setTaskFilter('all')" id="filt-all">All</button>
+        <button class="btn ghost" onclick="setTaskFilter('open')" id="filt-open">Open</button>
+        <button class="btn ghost" onclick="setTaskFilter('done')" id="filt-done">Done</button>
+      </div>
+      <div id="taskListFull"></div>
+    </div>
+  </div>
+
+  <!-- FINANCE -->
+  <div class="panel" id="panel-finance">
+    <div class="finance-cols">
+      <div>
+        <div class="card">
+          <h2><span class="dot" style="background:var(--finance)"></span>Joint Finances</h2>
+          <div class="add-row">
+            <input type="number" id="jointIncome" placeholder="Monthly income ($)">
+            <input type="number" id="jointBudget" placeholder="Monthly budget ($)">
+            <button class="btn ghost" onclick="setBudget('joint')">Set</button>
+          </div>
+          <div class="fin-summary fin-summary3">
+            <div><div class="lbl">Spent</div><div class="big" id="jointSpent">$0</div></div>
+            <div><div class="lbl">Budget</div><div class="big" id="jointBudgetShow">$0</div></div>
+            <div><div class="lbl">Saved</div><div class="big" id="jointSaved">$0</div></div>
+          </div>
+          <div class="bar-bg"><div class="bar-fill" id="jointBar" style="width:0%"></div></div>
+          <div class="add-row" style="margin-top:14px;">
+            <input type="text" id="jointExpName" placeholder="Expense">
+            <input type="number" id="jointExpAmt" placeholder="$">
+            <select id="jointExpCat">
+              <option>Housing</option><option>Groceries</option><option>Utilities</option>
+              <option>Transport</option><option>Insurance</option><option>Dining Out</option>
+              <option>Entertainment</option><option>Healthcare</option><option>Travel</option><option>Other</option>
+            </select>
+            <button class="btn" onclick="addExpense('joint')">Add</button>
+          </div>
+          <div id="jointCatBreakdown" style="margin:6px 0 10px;"></div>
+          <div id="jointExpList"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h2><span class="dot" style="background:var(--goals)"></span>Personal Finances</h2>
+          <div class="add-row">
+            <input type="number" id="personalIncome" placeholder="Monthly income ($)">
+            <input type="number" id="personalBudget" placeholder="Monthly budget ($)">
+            <button class="btn ghost" onclick="setBudget('personal')">Set</button>
+          </div>
+          <div class="fin-summary fin-summary3" style="background:var(--goals-soft)">
+            <div><div class="lbl">Spent</div><div class="big" id="personalSpent">$0</div></div>
+            <div><div class="lbl">Budget</div><div class="big" id="personalBudgetShow">$0</div></div>
+            <div><div class="lbl">Saved</div><div class="big" id="personalSaved">$0</div></div>
+          </div>
+          <div class="bar-bg"><div class="bar-fill" id="personalBar" style="width:0%; background:var(--goals)"></div></div>
+          <div class="add-row" style="margin-top:14px;">
+            <input type="text" id="personalExpName" placeholder="Expense">
+            <input type="number" id="personalExpAmt" placeholder="$">
+            <select id="personalExpCat">
+              <option>Groceries</option><option>Transport</option><option>Dining Out</option>
+              <option>Shopping</option><option>Entertainment</option><option>Healthcare</option>
+              <option>Subscriptions</option><option>Fitness</option><option>Travel</option><option>Other</option>
+            </select>
+            <button class="btn" onclick="addExpense('personal')">Add</button>
+          </div>
+          <div id="personalCatBreakdown" style="margin:6px 0 10px;"></div>
+          <div id="personalExpList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot" style="background:var(--signature)"></span>Savings Goals</h2>
+      <p style="color:var(--ink-soft); font-size:0.85rem; margin-top:-8px;">Big-picture money goals — house down payment, emergency fund, a trip, anything you're saving toward.</p>
+      <div class="add-row">
+        <input type="text" id="sgName" placeholder="e.g. House down payment">
+        <input type="number" id="sgTarget" placeholder="Target ($)">
+        <input type="number" id="sgSaved" placeholder="Already saved ($)">
+        <input type="number" id="sgMonthly" placeholder="Monthly contribution ($)">
+        <button class="btn" onclick="addSavingsGoal()">Add</button>
+      </div>
+      <div id="savingsGoalsList"></div>
+    </div>
+  </div>
+
+  <!-- GOALS -->
+  <div class="panel" id="panel-goals">
+    <div class="card">
+      <h2><span class="dot" style="background:var(--goals)"></span>Add a goal</h2>
+      <div class="add-row">
+        <input type="text" id="goalName" placeholder="Goal name...">
+        <input type="date" id="goalDate">
+        <button class="btn" onclick="addGoal()">Add goal</button>
+      </div>
+      <div id="goalsList"></div>
+    </div>
+  </div>
+
+  <footer class="note">synced to your account · click print to keep a paper copy</footer>
 </div>
 
-<script src="script.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ===== PASTE YOUR FIREBASE CONFIG HERE (from Firebase Console > Project Settings) =====
+const firebaseConfig = {
+  apiKey: "AIzaSyAzLYoQHEKtnJn5u9nNyP5aiHQWRpL9oMU",
+  authDomain: "my-daily-tracker-1af7e.firebaseapp.com",
+  projectId: "my-daily-tracker-1af7e",
+  storageBucket: "my-daily-tracker-1af7e.firebasestorage.app",
+  messagingSenderId: "690369646138",
+  appId: "1:690369646138:web:c2fec8d8c63dad186cef03"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+let currentUid = null;
+let isSignUpMode = false;
+
+function toggleLoginMode(){
+  isSignUpMode = !isSignUpMode;
+  document.getElementById('loginBtn').textContent = isSignUpMode ? 'Create account' : 'Sign in';
+  document.getElementById('loginSwitch').textContent = isSignUpMode ? 'Already have an account? Sign in' : 'First time here? Create an account';
+  document.getElementById('loginSubtitle').textContent = isSignUpMode ? 'Create your account (do this once)' : 'Sign in to sync across your devices';
+  document.getElementById('loginError').textContent = '';
+}
+function doSignIn(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pw = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  if(!email || !pw){ errEl.textContent = 'Enter an email and password.'; return; }
+  const action = isSignUpMode
+    ? auth.createUserWithEmailAndPassword(email, pw)
+    : auth.signInWithEmailAndPassword(email, pw);
+  action.catch(e => { errEl.textContent = e.message; });
+}
+
+auth.onAuthStateChanged(async user => {
+  if(user){
+    currentUid = user.uid;
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    await loadAll();
+  } else {
+    document.getElementById('loginOverlay').style.display = 'flex';
+    document.getElementById('mainApp').style.display = 'none';
+  }
+});
+
+let state = {
+  tasks: [], habits: [], goals: [], chores: [],
+  finance: { joint: { budget:0, income:0, expenses:[] }, personal: { budget:0, income:0, expenses:[] }, savingsGoals: [] },
+  workMode: {}, dailyLog: {}
+};
+let taskFilter = 'all';
+const todayKey = () => new Date().toISOString().slice(0,10);
+let viewDate = todayKey();
+
+function shiftViewDate(delta){
+  const d = new Date(viewDate+'T00:00:00');
+  d.setDate(d.getDate()+delta);
+  viewDate = d.toISOString().slice(0,10);
+  document.getElementById('viewDate').value = viewDate;
+  render();
+}
+function jumpToday(){ viewDate = todayKey(); document.getElementById('viewDate').value = viewDate; render(); }
+document.getElementById('viewDate').value = viewDate;
+document.getElementById('viewDate').onchange = (e)=>{ viewDate = e.target.value; render(); };
+
+async function loadAll(){
+  try{
+    const docRef = db.collection('users').doc(currentUid).collection('dashboard').doc('state');
+    const snap = await docRef.get();
+    if(snap.exists){ state = snap.data().payload ? JSON.parse(snap.data().payload) : state; }
+  }catch(e){ console.error('load failed', e); }
+  migrateState();
+  render();
+}
+function migrateState(){
+  if(!state.finance) state.finance = { joint:{budget:0,income:0,expenses:[]}, personal:{budget:0,income:0,expenses:[]}, savingsGoals:[] };
+  if(state.finance.joint.income === undefined) state.finance.joint.income = 0;
+  if(state.finance.personal.income === undefined) state.finance.personal.income = 0;
+  if(!state.finance.savingsGoals) state.finance.savingsGoals = [];
+  if(!state.chores) state.chores = [];
+  if(!state.dailyLog) state.dailyLog = {};
+}
+async function save(){
+  if(!currentUid) return;
+  try{
+    await db.collection('users').doc(currentUid).collection('dashboard').doc('state')
+      .set({ payload: JSON.stringify(state), updatedAt: Date.now() });
+  }catch(e){ console.error('save failed', e); }
+}
+
+// ---------- Header ----------
+document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-US',{ weekday:'long', month:'long', day:'numeric' });
+
+function setMode(m){
+  state.workMode[todayKey()] = m;
+  document.getElementById('modeOffice').classList.toggle('active', m==='office');
+  document.getElementById('modeWFH').classList.toggle('active', m==='wfh');
+  save();
+}
+document.getElementById('modeOffice').onclick = ()=>setMode('office');
+document.getElementById('modeWFH').onclick = ()=>setMode('wfh');
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-'+t.dataset.tab).classList.add('active');
+  };
+});
+
+// ---------- Tasks ----------
+function addTask(){
+  const name = document.getElementById('taskNameInput').value.trim();
+  if(!name) return;
+  state.tasks.push({ id: Date.now(), name, priority: document.getElementById('taskPriority').value,
+    date: document.getElementById('taskDate').value || todayKey(), done:false });
+  document.getElementById('taskNameInput').value='';
+  document.getElementById('taskDate').value='';
+  save(); render();
+}
+function quickAddTask(){
+  const el = document.getElementById('quickTaskInput');
+  const name = el.value.trim(); if(!name) return;
+  state.tasks.push({ id: Date.now(), name, priority:'med', date: todayKey(), done:false });
+  el.value=''; save(); render();
+}
+function toggleTask(id){ const t = state.tasks.find(x=>x.id===id); t.done=!t.done; save(); render(); }
+function deleteTask(id){ state.tasks = state.tasks.filter(x=>x.id!==id); save(); render(); }
+function setTaskFilter(f){ taskFilter=f; render(); }
+
+function renderTaskRow(t){
+  const div = document.createElement('div'); div.className='row';
+  div.innerHTML = `<div class="check ${t.done?'done':''}" onclick="toggleTask(${t.id})">${t.done?'✓':''}</div>
+    <div class="name" style="${t.done?'text-decoration:line-through;color:var(--ink-soft)':''}">${escapeHtml(t.name)}</div>
+    <span class="pill ${t.priority}">${t.priority}</span>
+    <span class="meta">${t.date}</span>
+    <button class="icon-btn" onclick="deleteTask(${t.id})">✕</button>`;
+  return div;
+}
+
+// ---------- Habits ----------
+function addHabit(){
+  const name = document.getElementById('habitNameInput').value.trim();
+  if(!name) return;
+  state.habits.push({ id: Date.now(), name, log: {} });
+  document.getElementById('habitNameInput').value='';
+  save(); render();
+}
+function toggleHabitDay(habitId, dateStr){
+  const h = state.habits.find(x=>x.id===habitId);
+  h.log[dateStr] = !h.log[dateStr];
+  save(); render();
+}
+function deleteHabit(id){ state.habits = state.habits.filter(x=>x.id!==id); save(); render(); }
+
+function calcStreak(h){
+  let streak=0; let d = new Date();
+  while(true){
+    const key = d.toISOString().slice(0,10);
+    if(h.log[key]){ streak++; d.setDate(d.getDate()-1); } else break;
+  }
+  return streak;
+}
+
+// ---------- Daily Log: intention + proud moments ----------
+function getLog(date){
+  if(!state.dailyLog[date]) state.dailyLog[date] = { intention:'', proud:[] };
+  return state.dailyLog[date];
+}
+function setIntention(text){
+  getLog(viewDate).intention = text;
+  save();
+}
+function addProud(){
+  const el = document.getElementById('proudInput');
+  const text = el.value.trim(); if(!text) return;
+  getLog(viewDate).proud.push({ id: Date.now(), text });
+  el.value = '';
+  save(); render();
+}
+function deleteProud(id){
+  const log = getLog(viewDate);
+  log.proud = log.proud.filter(p=>p.id!==id);
+  save(); render();
+}
+
+// ---------- Household chores (recurring, like habits) ----------
+function addChore(){
+  const el = document.getElementById('choreNameInput');
+  const name = el.value.trim(); if(!name) return;
+  state.chores.push({ id: Date.now(), name, log:{} });
+  el.value = '';
+  save(); render();
+}
+function toggleChoreDay(choreId, dateStr){
+  const c = state.chores.find(x=>x.id===choreId);
+  c.log[dateStr] = !c.log[dateStr];
+  save(); render();
+}
+function deleteChore(id){ state.chores = state.chores.filter(x=>x.id!==id); save(); render(); }
+
+function renderHabitBlock(h){
+  const div = document.createElement('div'); div.className='card habit-block';
+  const streak = calcStreak(h);
+  let stamps = '';
+  const now = new Date(); const year = now.getFullYear(); const month = now.getMonth();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  for(let d=1; d<=daysInMonth; d++){
+    const dateObj = new Date(year, month, d);
+    const key = dateObj.toISOString().slice(0,10);
+    const filled = !!h.log[key];
+    const isToday = key === todayKey();
+    const rot = (d%2===0? -6: 6);
+    stamps += `<div class="stamp ${filled?'filled':''} ${isToday?'today':''}" style="--r:${rot}deg" onclick="toggleHabitDay(${h.id},'${key}')">${filled? '✓' : d}</div>`;
+  }
+  div.innerHTML = `<div class="habit-head">
+      <span class="htitle">${escapeHtml(h.name)}</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="streak">🔥 ${streak} day${streak===1?'':'s'}</span>
+        <button class="icon-btn" onclick="deleteHabit(${h.id})">✕</button>
+      </div>
+    </div>
+    <div class="stamp-grid">${stamps}</div>`;
+  return div;
+}
+
+// ---------- Finance ----------
+function setBudget(type){
+  const val = parseFloat(document.getElementById(type+'Budget').value) || 0;
+  const inc = parseFloat(document.getElementById(type+'Income').value) || 0;
+  state.finance[type].budget = val;
+  state.finance[type].income = inc;
+  save(); render();
+}
+function addExpense(type){
+  const name = document.getElementById(type+'ExpName').value.trim();
+  const amt = parseFloat(document.getElementById(type+'ExpAmt').value) || 0;
+  const cat = document.getElementById(type+'ExpCat').value;
+  if(!name || !amt) return;
+  state.finance[type].expenses.push({ id:Date.now(), name, amt, cat, date: todayKey() });
+  document.getElementById(type+'ExpName').value='';
+  document.getElementById(type+'ExpAmt').value='';
+  save(); render();
+}
+function deleteExpense(type,id){
+  state.finance[type].expenses = state.finance[type].expenses.filter(e=>e.id!==id);
+  save(); render();
+}
+function renderFinanceCol(type){
+  const f = state.finance[type];
+  const spent = f.expenses.reduce((s,e)=>s+e.amt,0);
+  const saved = (f.income||0) - spent;
+  document.getElementById(type+'Spent').textContent = '$'+spent.toFixed(0);
+  document.getElementById(type+'BudgetShow').textContent = '$'+f.budget.toFixed(0);
+  document.getElementById(type+'Saved').textContent = (saved<0?'-':'')+'$'+Math.abs(saved).toFixed(0);
+  document.getElementById(type+'Saved').style.color = saved<0 ? '#B4534A' : 'inherit';
+  const pct = f.budget>0 ? Math.min(100,(spent/f.budget)*100) : 0;
+  const bar = document.getElementById(type+'Bar');
+  bar.style.width = pct+'%';
+  bar.classList.toggle('over', f.budget>0 && spent>f.budget);
+
+  // category breakdown
+  const breakdown = document.getElementById(type+'CatBreakdown');
+  breakdown.innerHTML = '';
+  if(f.expenses.length>0){
+    const byCat = {};
+    f.expenses.forEach(e=>{ byCat[e.cat] = (byCat[e.cat]||0) + e.amt; });
+    const maxCat = Math.max(...Object.values(byCat));
+    Object.entries(byCat).sort((a,b)=>b[1]-a[1]).forEach(([cat,amt])=>{
+      const row = document.createElement('div'); row.className='cat-breakdown-row';
+      row.innerHTML = `<div class="cat-breakdown-top"><span>${escapeHtml(cat)}</span><span>$${amt.toFixed(0)}</span></div>
+        <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${(amt/maxCat)*100}%"></div></div>`;
+      breakdown.appendChild(row);
+    });
+  }
+
+  const list = document.getElementById(type+'ExpList');
+  list.innerHTML='';
+  if(f.expenses.length===0){ list.innerHTML = '<div class="empty">No expenses logged yet.</div>'; return; }
+  [...f.expenses].reverse().forEach(e=>{
+    const row = document.createElement('div'); row.className='row';
+    row.innerHTML = `<div class="name">${escapeHtml(e.name)}</div>
+      <span class="meta">${escapeHtml(e.cat)}</span>
+      <span class="meta">$${e.amt.toFixed(2)}</span>
+      <button class="icon-btn" onclick="deleteExpense('${type}',${e.id})">✕</button>`;
+    list.appendChild(row);
+  });
+}
+
+// ---------- Savings Goals ----------
+function addSavingsGoal(){
+  const name = document.getElementById('sgName').value.trim();
+  const target = parseFloat(document.getElementById('sgTarget').value) || 0;
+  const saved = parseFloat(document.getElementById('sgSaved').value) || 0;
+  const monthly = parseFloat(document.getElementById('sgMonthly').value) || 0;
+  if(!name || !target) return;
+  state.finance.savingsGoals.push({ id:Date.now(), name, target, saved, monthly });
+  ['sgName','sgTarget','sgSaved','sgMonthly'].forEach(id=>document.getElementById(id).value='');
+  save(); render();
+}
+function addToSavingsGoal(id, amount){
+  const g = state.finance.savingsGoals.find(x=>x.id===id);
+  g.saved = Math.max(0, g.saved + amount);
+  save(); render();
+}
+function deleteSavingsGoal(id){
+  state.finance.savingsGoals = state.finance.savingsGoals.filter(x=>x.id!==id);
+  save(); render();
+}
+function renderSavingsGoal(g){
+  const div = document.createElement('div'); div.className='sg-card';
+  const pct = g.target>0 ? Math.min(100,(g.saved/g.target)*100) : 0;
+  const remaining = Math.max(0, g.target - g.saved);
+  const monthsLeft = g.monthly>0 ? Math.ceil(remaining/g.monthly) : null;
+  div.innerHTML = `<div class="sg-top">
+      <span class="sgname">🏡 ${escapeHtml(g.name)}</span>
+      <button class="icon-btn" onclick="deleteSavingsGoal(${g.id})">✕</button>
+    </div>
+    <div class="sg-amounts">$${g.saved.toFixed(0)} saved of $${g.target.toFixed(0)} · ${pct.toFixed(0)}%</div>
+    <div class="sg-bar-bg"><div class="sg-bar-fill" style="width:${pct}%"></div></div>
+    <div class="sg-footer">
+      <span>${monthsLeft!==null ? `~${monthsLeft} month${monthsLeft===1?'':'s'} to go at $${g.monthly}/mo` : (g.monthly>0?'':'add a monthly contribution to see a timeline')}</span>
+      <div>
+        <button class="icon-btn" onclick="addToSavingsGoal(${g.id}, 100)">+$100</button>
+        <button class="icon-btn" onclick="addToSavingsGoal(${g.id}, -100)">−$100</button>
+      </div>
+    </div>`;
+  return div;
+}
+
+// ---------- Goals ----------
+function addGoal(){
+  const name = document.getElementById('goalName').value.trim();
+  const date = document.getElementById('goalDate').value;
+  if(!name) return;
+  state.goals.push({ id:Date.now(), name, date, progress:0 });
+  document.getElementById('goalName').value=''; document.getElementById('goalDate').value='';
+  save(); render();
+}
+function updateGoalProgress(id, delta){
+  const g = state.goals.find(x=>x.id===id);
+  g.progress = Math.max(0, Math.min(100, g.progress+delta));
+  save(); render();
+}
+function deleteGoal(id){ state.goals = state.goals.filter(x=>x.id!==id); save(); render(); }
+
+function renderGoal(g){
+  const div = document.createElement('div'); div.className='goal-card';
+  div.innerHTML = `<div class="goal-top">
+      <span class="gname">${escapeHtml(g.name)}</span>
+      <span class="gdate">${g.date? 'by '+g.date : 'no deadline'}</span>
+    </div>
+    <div class="goal-bar-bg"><div class="goal-bar-fill" style="width:${g.progress}%"></div></div>
+    <div class="goal-controls">
+      <span class="goal-pct">${g.progress}%</span>
+      <div>
+        <button class="icon-btn" onclick="updateGoalProgress(${g.id},-10)">−10</button>
+        <button class="icon-btn" onclick="updateGoalProgress(${g.id},10)">+10</button>
+        <button class="icon-btn" onclick="deleteGoal(${g.id})">✕</button>
+      </div>
+    </div>`;
+  return div;
+}
+
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ---------- Master render ----------
+function render(){
+  // work mode
+  const mode = state.workMode[todayKey()];
+  document.getElementById('modeOffice').classList.toggle('active', mode==='office');
+  document.getElementById('modeWFH').classList.toggle('active', mode==='wfh');
+
+  // Today tab (stats always reflect actual today, regardless of viewed date)
+  const realTodayTasks = state.tasks.filter(t=>t.date===todayKey());
+  const doneCount = realTodayTasks.filter(t=>t.done).length;
+  document.getElementById('statTasks').textContent = `${doneCount}/${realTodayTasks.length}`;
+  const bestStreak = state.habits.reduce((m,h)=>Math.max(m, calcStreak(h)), 0);
+  document.getElementById('statStreak').textContent = bestStreak;
+  const upcoming = state.goals.filter(g=>g.date).sort((a,b)=>a.date.localeCompare(b.date))[0];
+  document.getElementById('statGoal').textContent = upcoming ? upcoming.date : '—';
+
+  // Viewing label
+  const label = document.getElementById('viewingLabel');
+  if(viewDate === todayKey()) label.textContent = 'Today';
+  else{
+    const d = new Date(viewDate+'T00:00:00');
+    label.textContent = d.toLocaleDateString('en-US',{ weekday:'long', month:'long', day:'numeric' });
+  }
+
+  const viewedTasks = state.tasks.filter(t=>t.date===viewDate);
+  const ttl = document.getElementById('todayTaskList'); ttl.innerHTML='';
+  if(viewedTasks.length===0){ ttl.innerHTML = '<div class="empty">Nothing logged for this day.</div>'; }
+  viewedTasks.forEach(t=>ttl.appendChild(renderTaskRow(t)));
+
+  const thl = document.getElementById('todayHabitList'); thl.innerHTML='';
+  if(state.habits.length===0){ thl.innerHTML = '<div class="empty">Add a habit in the Habits tab to see it here.</div>'; }
+  state.habits.forEach(h=>{
+    const row = document.createElement('div'); row.className='row';
+    const done = !!h.log[viewDate];
+    row.innerHTML = `<div class="check ${done?'done':''}" onclick="toggleHabitDay(${h.id},'${viewDate}')">${done?'✓':''}</div>
+      <div class="name">${escapeHtml(h.name)}</div>
+      <span class="streak">🔥 ${calcStreak(h)}</span>`;
+    thl.appendChild(row);
+  });
+
+  // Intention
+  const log = getLog(viewDate);
+  document.getElementById('intentionInput').value = log.intention || '';
+
+  // Proud moments
+  const pl = document.getElementById('proudList'); pl.innerHTML='';
+  if(log.proud.length===0){ pl.innerHTML = '<div class="empty">Nothing logged yet — small wins count too.</div>'; }
+  log.proud.forEach(p=>{
+    const row = document.createElement('div'); row.className='row';
+    row.innerHTML = `<div class="name">✨ ${escapeHtml(p.text)}</div>
+      <button class="icon-btn" onclick="deleteProud(${p.id})">✕</button>`;
+    pl.appendChild(row);
+  });
+
+  // Household chores (checklist for viewDate)
+  const cl = document.getElementById('choreList'); cl.innerHTML='';
+  if(state.chores.length===0){ cl.innerHTML = '<div class="empty">No chores added yet.</div>'; }
+  state.chores.forEach(c=>{
+    const row = document.createElement('div'); row.className='row';
+    const done = !!c.log[viewDate];
+    row.innerHTML = `<div class="check ${done?'done':''}" onclick="toggleChoreDay(${c.id},'${viewDate}')">${done?'✓':''}</div>
+      <div class="name">${escapeHtml(c.name)}</div>
+      <button class="icon-btn" onclick="deleteChore(${c.id})">✕</button>`;
+    cl.appendChild(row);
+  });
+
+  // Habits tab
+  const hc = document.getElementById('habitsContainer'); hc.innerHTML='';
+  if(state.habits.length===0){ hc.innerHTML = '<div class="card"><div class="empty">No habits yet — add your first one above.</div></div>'; }
+  state.habits.forEach(h=>hc.appendChild(renderHabitBlock(h)));
+
+  // Tasks tab
+  const tlf = document.getElementById('taskListFull'); tlf.innerHTML='';
+  ['all','open','done'].forEach(f=>document.getElementById('filt-'+f).style.opacity = (taskFilter===f?1:0.5));
+  let filtered = state.tasks;
+  if(taskFilter==='open') filtered = state.tasks.filter(t=>!t.done);
+  if(taskFilter==='done') filtered = state.tasks.filter(t=>t.done);
+  if(filtered.length===0){ tlf.innerHTML = '<div class="empty">No tasks here.</div>'; }
+  [...filtered].reverse().forEach(t=>tlf.appendChild(renderTaskRow(t)));
+
+  // Finance tab
+  document.getElementById('jointBudget').value = state.finance.joint.budget || '';
+  document.getElementById('jointIncome').value = state.finance.joint.income || '';
+  document.getElementById('personalBudget').value = state.finance.personal.budget || '';
+  document.getElementById('personalIncome').value = state.finance.personal.income || '';
+  renderFinanceCol('joint'); renderFinanceCol('personal');
+
+  const sgl = document.getElementById('savingsGoalsList'); sgl.innerHTML='';
+  if(state.finance.savingsGoals.length===0){ sgl.innerHTML = '<div class="empty">No savings goals yet — add one above, like a house down payment or emergency fund.</div>'; }
+  state.finance.savingsGoals.forEach(g=>sgl.appendChild(renderSavingsGoal(g)));
+
+  // Goals tab
+  const gl = document.getElementById('goalsList'); gl.innerHTML='';
+  if(state.goals.length===0){ gl.innerHTML = '<div class="empty">No goals yet — add one above.</div>'; }
+  [...state.goals].sort((a,b)=>(a.date||'9999').localeCompare(b.date||'9999')).forEach(g=>gl.appendChild(renderGoal(g)));
+}
+
+</script>
 </body>
 </html>
-
-
-
