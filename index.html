@@ -352,19 +352,19 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
         <div class="card">
           <h2><span class="dot" style="background:var(--finance)"></span>Joint Finances</h2>
           <div class="add-row">
-            <input type="number" id="jointIncome" placeholder="Monthly income ($)">
-            <input type="number" id="jointBudget" placeholder="Monthly budget ($)">
+            <input type="number" id="jointIncome" placeholder="Monthly income (rupees)">
+            <input type="number" id="jointBudget" placeholder="Monthly budget (rupees)">
             <button class="btn ghost" onclick="setBudget('joint')">Set</button>
           </div>
           <div class="fin-summary fin-summary3">
-            <div><div class="lbl">Spent</div><div class="big" id="jointSpent">$0</div></div>
-            <div><div class="lbl">Budget</div><div class="big" id="jointBudgetShow">$0</div></div>
-            <div><div class="lbl">Saved</div><div class="big" id="jointSaved">$0</div></div>
+            <div><div class="lbl">Spent</div><div class="big" id="jointSpent">0</div></div>
+            <div><div class="lbl">Budget</div><div class="big" id="jointBudgetShow">0</div></div>
+            <div><div class="lbl">Saved</div><div class="big" id="jointSaved">0</div></div>
           </div>
           <div class="bar-bg"><div class="bar-fill" id="jointBar" style="width:0%"></div></div>
           <div class="add-row" style="margin-top:14px;">
             <input type="text" id="jointExpName" placeholder="Expense">
-            <input type="number" id="jointExpAmt" placeholder="$">
+            <input type="number" id="jointExpAmt" placeholder="rupees">
             <select id="jointExpCat">
               <option>Housing</option><option>Groceries</option><option>Utilities</option>
               <option>Transport</option><option>Insurance</option><option>Dining Out</option>
@@ -380,19 +380,19 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
         <div class="card">
           <h2><span class="dot" style="background:var(--goals)"></span>Personal Finances</h2>
           <div class="add-row">
-            <input type="number" id="personalIncome" placeholder="Monthly income ($)">
-            <input type="number" id="personalBudget" placeholder="Monthly budget ($)">
+            <input type="number" id="personalIncome" placeholder="Monthly income ">
+            <input type="number" id="personalBudget" placeholder="Monthly budget ">
             <button class="btn ghost" onclick="setBudget('personal')">Set</button>
           </div>
           <div class="fin-summary fin-summary3" style="background:var(--goals-soft)">
-            <div><div class="lbl">Spent</div><div class="big" id="personalSpent">$0</div></div>
-            <div><div class="lbl">Budget</div><div class="big" id="personalBudgetShow">$0</div></div>
-            <div><div class="lbl">Saved</div><div class="big" id="personalSaved">$0</div></div>
+            <div><div class="lbl">Spent</div><div class="big" id="personalSpent">0</div></div>
+            <div><div class="lbl">Budget</div><div class="big" id="personalBudgetShow">0</div></div>
+            <div><div class="lbl">Saved</div><div class="big" id="personalSaved">0</div></div>
           </div>
           <div class="bar-bg"><div class="bar-fill" id="personalBar" style="width:0%; background:var(--goals)"></div></div>
           <div class="add-row" style="margin-top:14px;">
             <input type="text" id="personalExpName" placeholder="Expense">
-            <input type="number" id="personalExpAmt" placeholder="$">
+            <input type="number" id="personalExpAmt" placeholder="rupees">
             <select id="personalExpCat">
               <option>Groceries</option><option>Transport</option><option>Dining Out</option>
               <option>Shopping</option><option>Entertainment</option><option>Healthcare</option>
@@ -411,9 +411,9 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
       <p style="color:var(--ink-soft); font-size:0.85rem; margin-top:-8px;">Big-picture money goals — house down payment, emergency fund, a trip, anything you're saving toward.</p>
       <div class="add-row">
         <input type="text" id="sgName" placeholder="e.g. House down payment">
-        <input type="number" id="sgTarget" placeholder="Target ($)">
-        <input type="number" id="sgSaved" placeholder="Already saved ($)">
-        <input type="number" id="sgMonthly" placeholder="Monthly contribution ($)">
+        <input type="number" id="sgTarget" placeholder="Target ">
+        <input type="number" id="sgSaved" placeholder="Already saved ">
+        <input type="number" id="sgMonthly" placeholder="Monthly contribution ">
         <button class="btn" onclick="addSavingsGoal()">Add</button>
       </div>
       <div id="savingsGoalsList"></div>
