@@ -184,6 +184,27 @@ button{ font-family:'Karla',sans-serif; cursor:pointer; }
 .sg-bar-fill{ height:100%; background:var(--signature); border-radius:8px; }
 .sg-footer{ display:flex; justify-content:space-between; align-items:center; font-size:0.78rem; color:var(--ink-soft); }
 
+/* ---------- Calendar ---------- */
+.cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:2px; }
+.cal-weekday{ text-align:center; font-size:0.68rem; color:var(--ink-soft); font-weight:700; padding:4px 0; text-transform:uppercase; letter-spacing:0.4px; }
+.cal-cell{
+  aspect-ratio:1; border:1px solid var(--line); border-radius:9px; padding:4px;
+  cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+  font-size:0.72rem; background:var(--surface); transition:background .12s ease;
+}
+.cal-cell:hover{ background:var(--surface-alt); }
+.cal-cell.empty{ border:none; cursor:default; background:transparent; }
+.cal-cell.today{ box-shadow:0 0 0 2px var(--ink); }
+.cal-cell.selected{ background:var(--goals-soft); border-color:var(--goals); }
+.cal-daynum{ font-weight:700; font-family:'JetBrains Mono',monospace; }
+.cal-dots{ display:flex; gap:2px; margin-top:4px; flex-wrap:wrap; justify-content:center; }
+.cal-dot{ width:6px; height:6px; border-radius:50%; }
+.cal-selected-panel{ margin-top:18px; padding-top:14px; border-top:1px dashed var(--line); }
+.cal-note-pill{
+  display:inline-flex; align-items:center; gap:6px; font-size:0.78rem; padding:6px 10px;
+  border-radius:20px; font-weight:600; margin:0 6px 6px 0;
+}
+
 /* ---------- Stats strip (Today) ---------- */
 .stats-strip{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:18px; }
 @media (max-width:700px){ .stats-strip{ grid-template-columns:1fr; } }
@@ -197,7 +218,7 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
 
 /* ---------- Print ---------- */
 @media print{
-  .tabs, .top-actions, .add-row, .icon-btn, .mode-toggle, .check{ display:none !important; }
+  .tabs, .top-actions, .add-row, .icon-btn, .check{ display:none !important; }
   .panel{ display:block !important; }
   body{ background:white; }
   .card{ break-inside:avoid; border:1px solid #ccc; }
@@ -237,16 +258,11 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
 
   <div class="masthead">
     <div>
-      <h1>The Daily Ledger</h1>
-      <div class="sub">habits · tasks · money · goals</div>
+      <h1>📔 The Daily Ledger</h1>
+      <div class="sub">habits · tasks · money · goals · reflections</div>
     </div>
     <div class="today-block">
       <div class="date" id="todayDate"></div>
-      <div class="role">Adobe Analytics Consultant</div>
-      <div class="mode-toggle">
-        <button class="mode-btn" id="modeOffice">Office</button>
-        <button class="mode-btn" id="modeWFH">WFH</button>
-      </div>
     </div>
   </div>
 
@@ -258,6 +274,7 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
     <button class="tab active" data-tab="today">Today</button>
     <button class="tab" data-tab="habits">Habits</button>
     <button class="tab" data-tab="tasks">Tasks</button>
+    <button class="tab" data-tab="planning">Planning</button>
     <button class="tab" data-tab="finance">Finance</button>
     <button class="tab" data-tab="goals">Goals</button>
   </div>
@@ -291,12 +308,12 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
     </div>
 
     <div class="card">
-      <h2><span class="dot" style="background:var(--goals)"></span>Today's Intention</h2>
-      <input type="text" id="intentionInput" placeholder="What's the one thing you want to focus on today?" style="width:100%;" onchange="setIntention(this.value)">
+      <h2><span class="dot" style="background:var(--goals)"></span>🌅 Today's Intention</h2>
+      <input type="text" id="intentionInput" placeholder="What's the one thing you want to focus on today?" style="width:100%;" oninput="onIntentionInput(this.value)">
     </div>
 
     <div class="card">
-      <h2><span class="dot" style="background:var(--signature)"></span>Proud of today</h2>
+      <h2><span class="dot" style="background:var(--signature)"></span>✨ Proud of today</h2>
       <div class="add-row">
         <input type="text" id="proudInput" placeholder="Something you did well today...">
         <button class="btn" onclick="addProud()">Add</button>
@@ -305,7 +322,7 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
     </div>
 
     <div class="card">
-      <h2><span class="dot" style="background:var(--tasks)"></span>Household Chores</h2>
+      <h2><span class="dot" style="background:var(--tasks)"></span>🧹 Household Chores</h2>
       <div class="add-row">
         <input type="text" id="choreNameInput" placeholder="e.g. Dishes, Laundry, Take out trash...">
         <button class="btn" onclick="addChore()">Add chore</button>
@@ -317,7 +334,7 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
   <!-- HABITS -->
   <div class="panel" id="panel-habits">
     <div class="card">
-      <h2><span class="dot" style="background:var(--habit)"></span>Add a habit</h2>
+      <h2><span class="dot" style="background:var(--habit)"></span>🌿 Add a habit</h2>
       <div class="add-row">
         <input type="text" id="habitNameInput" placeholder="e.g. Read 20 minutes, No sugar, Gym...">
         <button class="btn" onclick="addHabit()">Add habit</button>
@@ -332,6 +349,12 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
       <h2><span class="dot" style="background:var(--tasks)"></span>Add a task</h2>
       <div class="add-row">
         <input type="text" id="taskNameInput" placeholder="Task name...">
+        <select id="taskCategory">
+          <option value="Office Work">💼 Office Work</option>
+          <option value="Personal Project">🎯 Personal Project</option>
+          <option value="Homemaking">🧺 Homemaking</option>
+          <option value="Wellbeing">🌱 Wellbeing</option>
+        </select>
         <select id="taskPriority"><option value="med">Medium</option><option value="high">High</option><option value="low">Low</option></select>
         <input type="date" id="taskDate">
         <button class="btn" onclick="addTask()">Add</button>
@@ -345,26 +368,117 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
     </div>
   </div>
 
+  <!-- PLANNING -->
+  <div class="panel" id="panel-planning">
+    <div class="card">
+      <h2><span class="dot" style="background:var(--signature)"></span>🗓️ Monthly Calendar</h2>
+      <p style="color:var(--ink-soft); font-size:0.85rem; margin-top:-8px;">Appointments, birthdays, holidays, festivals, vacations — up to 3 notes per day.</p>
+      <div class="add-row" style="align-items:center;">
+        <button class="icon-btn" onclick="shiftMonth(-1)" title="Previous month">← Prev</button>
+        <div id="calMonthLabel" style="font-family:'Fraunces',serif; font-weight:600; font-size:1.1rem; flex:1; text-align:center;"></div>
+        <button class="icon-btn" onclick="shiftMonth(1)" title="Next month">Next →</button>
+      </div>
+      <div class="cal-grid" id="calWeekdayRow">
+        <div class="cal-weekday">Sun</div><div class="cal-weekday">Mon</div><div class="cal-weekday">Tue</div>
+        <div class="cal-weekday">Wed</div><div class="cal-weekday">Thu</div><div class="cal-weekday">Fri</div><div class="cal-weekday">Sat</div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+
+      <div class="cal-selected-panel">
+        <div style="font-weight:700; margin-bottom:8px;" id="calSelectedLabel"></div>
+        <div class="add-row">
+          <input type="text" id="calNoteInput" placeholder="e.g. Dentist appointment, Mom's birthday...">
+          <select id="calNoteType">
+            <option value="appointment">📅 Appointment</option>
+            <option value="birthday">🎂 Birthday</option>
+            <option value="holiday">🎉 Holiday</option>
+            <option value="festival">🎊 Festival</option>
+            <option value="vacation">✈️ Vacation</option>
+          </select>
+          <button class="btn" onclick="addCalendarNote()">Add</button>
+        </div>
+        <div id="calNoteMsg" style="font-size:0.78rem; color:#B4534A; margin-bottom:8px;"></div>
+        <div id="calNoteList"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot" style="background:var(--tasks)"></span>🗒️ Weekly Dump</h2>
+      <p style="color:var(--ink-soft); font-size:0.85rem; margin-top:-8px;">Brain-dump everything for the coming week here, then move items into daily tasks as you get to them.</p>
+      <div class="add-row">
+        <input type="text" id="weeklyDumpInput" placeholder="Something to do this week...">
+        <button class="btn" onclick="addWeeklyDump()">Add</button>
+      </div>
+      <div id="weeklyDumpList"></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot" style="background:var(--finance)"></span>🛒 Shopping List</h2>
+      <div class="add-row">
+        <input type="text" id="shoppingInput" placeholder="Item to buy...">
+        <button class="btn" onclick="addShoppingItem()">Add</button>
+      </div>
+      <div id="shoppingListEl"></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot" style="background:var(--goals)"></span>🌤️ Weekend Plan</h2>
+      <div class="grid2">
+        <div>
+          <div style="font-weight:700; font-size:0.85rem; margin-bottom:6px; color:var(--ink-soft);">Saturday</div>
+          <div class="add-row">
+            <input type="text" id="satInput" placeholder="Add a plan...">
+            <button class="btn ghost" onclick="addWeekendItem('saturday')">Add</button>
+          </div>
+          <div id="satList"></div>
+        </div>
+        <div>
+          <div style="font-weight:700; font-size:0.85rem; margin-bottom:6px; color:var(--ink-soft);">Sunday</div>
+          <div class="add-row">
+            <input type="text" id="sunInput" placeholder="Add a plan...">
+            <button class="btn ghost" onclick="addWeekendItem('sunday')">Add</button>
+          </div>
+          <div id="sunList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot" style="background:var(--signature)"></span>📖 Monthly Reflection</h2>
+      <div class="add-row" style="align-items:center;">
+        <button class="icon-btn" onclick="shiftMonth(-1)" title="Previous month">← Prev</button>
+        <div id="monthLabel" style="font-family:'Fraunces',serif; font-weight:600; font-size:1.1rem; flex:1; text-align:center;"></div>
+        <button class="icon-btn" onclick="shiftMonth(1)" title="Next month">Next →</button>
+      </div>
+      <input type="text" id="monthThemeInput" placeholder="This month's theme or focus..." style="width:100%; margin-bottom:14px;" oninput="onMonthThemeInput(this.value)">
+      <div class="add-row">
+        <input type="text" id="monthHighlightInput" placeholder="A highlight or memory from this month...">
+        <button class="btn" onclick="addMonthHighlight()">Add</button>
+      </div>
+      <div id="monthHighlightList"></div>
+    </div>
+  </div>
+
   <!-- FINANCE -->
   <div class="panel" id="panel-finance">
     <div class="finance-cols">
       <div>
         <div class="card">
-          <h2><span class="dot" style="background:var(--finance)"></span>Joint Finances</h2>
+          <h2><span class="dot" style="background:var(--finance)"></span>💰 Joint Finances</h2>
           <div class="add-row">
-            <input type="number" id="jointIncome" placeholder="Monthly income (rupees)">
-            <input type="number" id="jointBudget" placeholder="Monthly budget (rupees)">
+            <input type="number" id="jointIncome" placeholder="Monthly income (₹)">
+            <input type="number" id="jointBudget" placeholder="Monthly budget (₹)">
             <button class="btn ghost" onclick="setBudget('joint')">Set</button>
           </div>
           <div class="fin-summary fin-summary3">
-            <div><div class="lbl">Spent</div><div class="big" id="jointSpent">0</div></div>
-            <div><div class="lbl">Budget</div><div class="big" id="jointBudgetShow">0</div></div>
-            <div><div class="lbl">Saved</div><div class="big" id="jointSaved">0</div></div>
+            <div><div class="lbl">Spent</div><div class="big" id="jointSpent">₹0</div></div>
+            <div><div class="lbl">Budget</div><div class="big" id="jointBudgetShow">₹0</div></div>
+            <div><div class="lbl">Saved</div><div class="big" id="jointSaved">₹0</div></div>
           </div>
           <div class="bar-bg"><div class="bar-fill" id="jointBar" style="width:0%"></div></div>
           <div class="add-row" style="margin-top:14px;">
             <input type="text" id="jointExpName" placeholder="Expense">
-            <input type="number" id="jointExpAmt" placeholder="rupees">
+            <input type="number" id="jointExpAmt" placeholder="₹">
             <select id="jointExpCat">
               <option>Housing</option><option>Groceries</option><option>Utilities</option>
               <option>Transport</option><option>Insurance</option><option>Dining Out</option>
@@ -378,21 +492,21 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
       </div>
       <div>
         <div class="card">
-          <h2><span class="dot" style="background:var(--goals)"></span>Personal Finances</h2>
+          <h2><span class="dot" style="background:var(--goals)"></span>👛 Personal Finances</h2>
           <div class="add-row">
-            <input type="number" id="personalIncome" placeholder="Monthly income ">
-            <input type="number" id="personalBudget" placeholder="Monthly budget ">
+            <input type="number" id="personalIncome" placeholder="Monthly income (₹)">
+            <input type="number" id="personalBudget" placeholder="Monthly budget (₹)">
             <button class="btn ghost" onclick="setBudget('personal')">Set</button>
           </div>
           <div class="fin-summary fin-summary3" style="background:var(--goals-soft)">
-            <div><div class="lbl">Spent</div><div class="big" id="personalSpent">0</div></div>
-            <div><div class="lbl">Budget</div><div class="big" id="personalBudgetShow">0</div></div>
-            <div><div class="lbl">Saved</div><div class="big" id="personalSaved">0</div></div>
+            <div><div class="lbl">Spent</div><div class="big" id="personalSpent">₹0</div></div>
+            <div><div class="lbl">Budget</div><div class="big" id="personalBudgetShow">₹0</div></div>
+            <div><div class="lbl">Saved</div><div class="big" id="personalSaved">₹0</div></div>
           </div>
           <div class="bar-bg"><div class="bar-fill" id="personalBar" style="width:0%; background:var(--goals)"></div></div>
           <div class="add-row" style="margin-top:14px;">
             <input type="text" id="personalExpName" placeholder="Expense">
-            <input type="number" id="personalExpAmt" placeholder="rupees">
+            <input type="number" id="personalExpAmt" placeholder="₹">
             <select id="personalExpCat">
               <option>Groceries</option><option>Transport</option><option>Dining Out</option>
               <option>Shopping</option><option>Entertainment</option><option>Healthcare</option>
@@ -407,13 +521,13 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
     </div>
 
     <div class="card">
-      <h2><span class="dot" style="background:var(--signature)"></span>Savings Goals</h2>
+      <h2><span class="dot" style="background:var(--signature)"></span>🏡 Savings Goals</h2>
       <p style="color:var(--ink-soft); font-size:0.85rem; margin-top:-8px;">Big-picture money goals — house down payment, emergency fund, a trip, anything you're saving toward.</p>
       <div class="add-row">
         <input type="text" id="sgName" placeholder="e.g. House down payment">
-        <input type="number" id="sgTarget" placeholder="Target ">
-        <input type="number" id="sgSaved" placeholder="Already saved ">
-        <input type="number" id="sgMonthly" placeholder="Monthly contribution ">
+        <input type="number" id="sgTarget" placeholder="Target (₹)">
+        <input type="number" id="sgSaved" placeholder="Already saved (₹)">
+        <input type="number" id="sgMonthly" placeholder="Monthly contribution (₹)">
         <button class="btn" onclick="addSavingsGoal()">Add</button>
       </div>
       <div id="savingsGoalsList"></div>
@@ -423,7 +537,7 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
   <!-- GOALS -->
   <div class="panel" id="panel-goals">
     <div class="card">
-      <h2><span class="dot" style="background:var(--goals)"></span>Add a goal</h2>
+      <h2><span class="dot" style="background:var(--goals)"></span>🌟 Add a goal</h2>
       <div class="add-row">
         <input type="text" id="goalName" placeholder="Goal name...">
         <input type="date" id="goalDate">
@@ -433,7 +547,7 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
     </div>
   </div>
 
-  <footer class="note">synced to your account · click print to keep a paper copy</footer>
+  <footer class="note">saved automatically in this browser · click print to keep a paper copy</footer>
 </div>
 
 <!-- Firebase -->
@@ -443,12 +557,12 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
 <script>
 // ===== PASTE YOUR FIREBASE CONFIG HERE (from Firebase Console > Project Settings) =====
 const firebaseConfig = {
-  apiKey: "AIzaSyAzLYoQHEKtnJn5u9nNyP5aiHQWRpL9oMU",
-  authDomain: "my-daily-tracker-1af7e.firebaseapp.com",
-  projectId: "my-daily-tracker-1af7e",
-  storageBucket: "my-daily-tracker-1af7e.firebasestorage.app",
-  messagingSenderId: "690369646138",
-  appId: "1:690369646138:web:c2fec8d8c63dad186cef03"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
@@ -487,14 +601,20 @@ auth.onAuthStateChanged(async user => {
   }
 });
 
+
+
 let state = {
   tasks: [], habits: [], goals: [], chores: [],
   finance: { joint: { budget:0, income:0, expenses:[] }, personal: { budget:0, income:0, expenses:[] }, savingsGoals: [] },
-  workMode: {}, dailyLog: {}
+  workMode: {}, dailyLog: {},
+  weeklyDump: [], shoppingList: [], weekend: { saturday:[], sunday:[] }, monthlyLog: {},
+  calendarNotes: {}
 };
 let taskFilter = 'all';
 const todayKey = () => new Date().toISOString().slice(0,10);
 let viewDate = todayKey();
+let viewMonth = todayKey().slice(0,7); // YYYY-MM
+let selectedCalDate = todayKey();
 
 function shiftViewDate(delta){
   const d = new Date(viewDate+'T00:00:00');
@@ -523,6 +643,12 @@ function migrateState(){
   if(!state.finance.savingsGoals) state.finance.savingsGoals = [];
   if(!state.chores) state.chores = [];
   if(!state.dailyLog) state.dailyLog = {};
+  state.tasks.forEach(t=>{ if(!t.category) t.category='Office Work'; });
+  if(!state.weeklyDump) state.weeklyDump = [];
+  if(!state.shoppingList) state.shoppingList = [];
+  if(!state.weekend) state.weekend = { saturday:[], sunday:[] };
+  if(!state.monthlyLog) state.monthlyLog = {};
+  if(!state.calendarNotes) state.calendarNotes = {};
 }
 async function save(){
   if(!currentUid) return;
@@ -534,15 +660,6 @@ async function save(){
 
 // ---------- Header ----------
 document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-US',{ weekday:'long', month:'long', day:'numeric' });
-
-function setMode(m){
-  state.workMode[todayKey()] = m;
-  document.getElementById('modeOffice').classList.toggle('active', m==='office');
-  document.getElementById('modeWFH').classList.toggle('active', m==='wfh');
-  save();
-}
-document.getElementById('modeOffice').onclick = ()=>setMode('office');
-document.getElementById('modeWFH').onclick = ()=>setMode('wfh');
 
 // ---------- Tabs ----------
 document.querySelectorAll('.tab').forEach(t=>{
@@ -559,6 +676,7 @@ function addTask(){
   const name = document.getElementById('taskNameInput').value.trim();
   if(!name) return;
   state.tasks.push({ id: Date.now(), name, priority: document.getElementById('taskPriority').value,
+    category: document.getElementById('taskCategory').value,
     date: document.getElementById('taskDate').value || todayKey(), done:false });
   document.getElementById('taskNameInput').value='';
   document.getElementById('taskDate').value='';
@@ -567,17 +685,25 @@ function addTask(){
 function quickAddTask(){
   const el = document.getElementById('quickTaskInput');
   const name = el.value.trim(); if(!name) return;
-  state.tasks.push({ id: Date.now(), name, priority:'med', date: todayKey(), done:false });
+  state.tasks.push({ id: Date.now(), name, priority:'med', category:'Office Work', date: todayKey(), done:false });
   el.value=''; save(); render();
 }
 function toggleTask(id){ const t = state.tasks.find(x=>x.id===id); t.done=!t.done; save(); render(); }
 function deleteTask(id){ state.tasks = state.tasks.filter(x=>x.id!==id); save(); render(); }
 function setTaskFilter(f){ taskFilter=f; render(); }
 
+const CATEGORY_INFO = {
+  'Office Work': { emoji:'💼', color:'var(--finance)', soft:'var(--finance-soft)' },
+  'Personal Project': { emoji:'🎯', color:'#8A5E22', soft:'var(--goals-soft)' },
+  'Homemaking': { emoji:'🧺', color:'#8C4A56', soft:'var(--tasks-soft)' },
+  'Wellbeing': { emoji:'🌱', color:'#4C6B45', soft:'var(--habit-soft)' }
+};
 function renderTaskRow(t){
   const div = document.createElement('div'); div.className='row';
+  const cat = CATEGORY_INFO[t.category] || CATEGORY_INFO['Office Work'];
   div.innerHTML = `<div class="check ${t.done?'done':''}" onclick="toggleTask(${t.id})">${t.done?'✓':''}</div>
     <div class="name" style="${t.done?'text-decoration:line-through;color:var(--ink-soft)':''}">${escapeHtml(t.name)}</div>
+    <span class="pill" style="background:${cat.soft}; color:${cat.color};">${cat.emoji} ${t.category||''}</span>
     <span class="pill ${t.priority}">${t.priority}</span>
     <span class="meta">${t.date}</span>
     <button class="icon-btn" onclick="deleteTask(${t.id})">✕</button>`;
@@ -617,6 +743,12 @@ function setIntention(text){
   getLog(viewDate).intention = text;
   save();
 }
+let intentionSaveTimer = null;
+function onIntentionInput(text){
+  getLog(viewDate).intention = text;
+  clearTimeout(intentionSaveTimer);
+  intentionSaveTimer = setTimeout(()=>{ save(); }, 400);
+}
 function addProud(){
   const el = document.getElementById('proudInput');
   const text = el.value.trim(); if(!text) return;
@@ -644,6 +776,98 @@ function toggleChoreDay(choreId, dateStr){
   save(); render();
 }
 function deleteChore(id){ state.chores = state.chores.filter(x=>x.id!==id); save(); render(); }
+
+// ---------- Weekly Dump ----------
+function addWeeklyDump(){
+  const el = document.getElementById('weeklyDumpInput');
+  const text = el.value.trim(); if(!text) return;
+  state.weeklyDump.push({ id: Date.now(), text, done:false });
+  el.value=''; save(); render();
+}
+function toggleWeeklyDump(id){ const item = state.weeklyDump.find(x=>x.id===id); item.done=!item.done; save(); render(); }
+function deleteWeeklyDump(id){ state.weeklyDump = state.weeklyDump.filter(x=>x.id!==id); save(); render(); }
+function clearWeeklyDump(){ state.weeklyDump = []; save(); render(); }
+
+// ---------- Shopping List ----------
+function addShoppingItem(){
+  const el = document.getElementById('shoppingInput');
+  const text = el.value.trim(); if(!text) return;
+  state.shoppingList.push({ id: Date.now(), text, done:false });
+  el.value=''; save(); render();
+}
+function toggleShoppingItem(id){ const item = state.shoppingList.find(x=>x.id===id); item.done=!item.done; save(); render(); }
+function deleteShoppingItem(id){ state.shoppingList = state.shoppingList.filter(x=>x.id!==id); save(); render(); }
+function clearShoppingList(){ state.shoppingList = state.shoppingList.filter(x=>!x.done); save(); render(); }
+
+// ---------- Weekend Plan ----------
+function addWeekendItem(day){
+  const el = document.getElementById(day==='saturday'?'satInput':'sunInput');
+  const text = el.value.trim(); if(!text) return;
+  state.weekend[day].push({ id: Date.now(), text, done:false });
+  el.value=''; save(); render();
+}
+function toggleWeekendItem(day,id){ const item = state.weekend[day].find(x=>x.id===id); item.done=!item.done; save(); render(); }
+function deleteWeekendItem(day,id){ state.weekend[day] = state.weekend[day].filter(x=>x.id!==id); save(); render(); }
+
+// ---------- Monthly Reflection ----------
+function shiftMonth(delta){
+  const [y,m] = viewMonth.split('-').map(Number);
+  const d = new Date(y, m-1+delta, 1);
+  viewMonth = d.toISOString().slice(0,7);
+  selectedCalDate = viewMonth + '-01';
+  render();
+}
+
+// ---------- Calendar ----------
+const NOTE_TYPES = {
+  appointment: { emoji:'📅', label:'Appointment', color:'#2E5F63', soft:'var(--finance-soft)' },
+  birthday:    { emoji:'🎂', label:'Birthday',    color:'#8C4A56', soft:'var(--tasks-soft)' },
+  holiday:     { emoji:'🎉', label:'Holiday',     color:'#8A5E22', soft:'var(--goals-soft)' },
+  festival:    { emoji:'🎊', label:'Festival',    color:'#4C6B45', soft:'var(--habit-soft)' },
+  vacation:    { emoji:'✈️', label:'Vacation',    color:'#7A4038', soft:'#F1E3E0' }
+};
+function selectCalDay(dateStr){ selectedCalDate = dateStr; render(); }
+function addCalendarNote(){
+  const el = document.getElementById('calNoteInput');
+  const text = el.value.trim();
+  const type = document.getElementById('calNoteType').value;
+  const msgEl = document.getElementById('calNoteMsg');
+  msgEl.textContent = '';
+  if(!text) return;
+  if(!state.calendarNotes[selectedCalDate]) state.calendarNotes[selectedCalDate] = [];
+  if(state.calendarNotes[selectedCalDate].length >= 3){
+    msgEl.textContent = 'This day already has 3 notes — delete one first to add another.';
+    return;
+  }
+  state.calendarNotes[selectedCalDate].push({ id: Date.now(), text, type });
+  el.value='';
+  save(); render();
+}
+function deleteCalendarNote(dateStr, id){
+  state.calendarNotes[dateStr] = (state.calendarNotes[dateStr]||[]).filter(n=>n.id!==id);
+  save(); render();
+}
+function getMonthLog(month){
+  if(!state.monthlyLog[month]) state.monthlyLog[month] = { theme:'', highlights: [] };
+  return state.monthlyLog[month];
+}
+let monthThemeSaveTimer = null;
+function onMonthThemeInput(text){
+  getMonthLog(viewMonth).theme = text;
+  clearTimeout(monthThemeSaveTimer);
+  monthThemeSaveTimer = setTimeout(()=>{ save(); }, 400);
+}
+function addMonthHighlight(){
+  const el = document.getElementById('monthHighlightInput');
+  const text = el.value.trim(); if(!text) return;
+  getMonthLog(viewMonth).highlights.push({ id: Date.now(), text });
+  el.value=''; save(); render();
+}
+function deleteMonthHighlight(id){
+  const log = getMonthLog(viewMonth);
+  log.highlights = log.highlights.filter(h=>h.id!==id);
+  save(); render();
+}
 
 function renderHabitBlock(h){
   const div = document.createElement('div'); div.className='card habit-block';
@@ -696,9 +920,9 @@ function renderFinanceCol(type){
   const f = state.finance[type];
   const spent = f.expenses.reduce((s,e)=>s+e.amt,0);
   const saved = (f.income||0) - spent;
-  document.getElementById(type+'Spent').textContent = '$'+spent.toFixed(0);
-  document.getElementById(type+'BudgetShow').textContent = '$'+f.budget.toFixed(0);
-  document.getElementById(type+'Saved').textContent = (saved<0?'-':'')+'$'+Math.abs(saved).toFixed(0);
+  document.getElementById(type+'Spent').textContent = '₹'+spent.toFixed(0);
+  document.getElementById(type+'BudgetShow').textContent = '₹'+f.budget.toFixed(0);
+  document.getElementById(type+'Saved').textContent = (saved<0?'-':'')+'₹'+Math.abs(saved).toFixed(0);
   document.getElementById(type+'Saved').style.color = saved<0 ? '#B4534A' : 'inherit';
   const pct = f.budget>0 ? Math.min(100,(spent/f.budget)*100) : 0;
   const bar = document.getElementById(type+'Bar');
@@ -714,7 +938,7 @@ function renderFinanceCol(type){
     const maxCat = Math.max(...Object.values(byCat));
     Object.entries(byCat).sort((a,b)=>b[1]-a[1]).forEach(([cat,amt])=>{
       const row = document.createElement('div'); row.className='cat-breakdown-row';
-      row.innerHTML = `<div class="cat-breakdown-top"><span>${escapeHtml(cat)}</span><span>$${amt.toFixed(0)}</span></div>
+      row.innerHTML = `<div class="cat-breakdown-top"><span>${escapeHtml(cat)}</span><span>₹${amt.toFixed(0)}</span></div>
         <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${(amt/maxCat)*100}%"></div></div>`;
       breakdown.appendChild(row);
     });
@@ -727,7 +951,7 @@ function renderFinanceCol(type){
     const row = document.createElement('div'); row.className='row';
     row.innerHTML = `<div class="name">${escapeHtml(e.name)}</div>
       <span class="meta">${escapeHtml(e.cat)}</span>
-      <span class="meta">$${e.amt.toFixed(2)}</span>
+      <span class="meta">₹${e.amt.toFixed(2)}</span>
       <button class="icon-btn" onclick="deleteExpense('${type}',${e.id})">✕</button>`;
     list.appendChild(row);
   });
@@ -762,13 +986,13 @@ function renderSavingsGoal(g){
       <span class="sgname">🏡 ${escapeHtml(g.name)}</span>
       <button class="icon-btn" onclick="deleteSavingsGoal(${g.id})">✕</button>
     </div>
-    <div class="sg-amounts">$${g.saved.toFixed(0)} saved of $${g.target.toFixed(0)} · ${pct.toFixed(0)}%</div>
+    <div class="sg-amounts">₹${g.saved.toFixed(0)} saved of ₹${g.target.toFixed(0)} · ${pct.toFixed(0)}%</div>
     <div class="sg-bar-bg"><div class="sg-bar-fill" style="width:${pct}%"></div></div>
     <div class="sg-footer">
-      <span>${monthsLeft!==null ? `~${monthsLeft} month${monthsLeft===1?'':'s'} to go at $${g.monthly}/mo` : (g.monthly>0?'':'add a monthly contribution to see a timeline')}</span>
+      <span>${monthsLeft!==null ? `~${monthsLeft} month${monthsLeft===1?'':'s'} to go at ₹${g.monthly}/mo` : (g.monthly>0?'':'add a monthly contribution to see a timeline')}</span>
       <div>
-        <button class="icon-btn" onclick="addToSavingsGoal(${g.id}, 100)">+$100</button>
-        <button class="icon-btn" onclick="addToSavingsGoal(${g.id}, -100)">−$100</button>
+        <button class="icon-btn" onclick="addToSavingsGoal(${g.id}, 100)">+₹100</button>
+        <button class="icon-btn" onclick="addToSavingsGoal(${g.id}, -100)">−₹100</button>
       </div>
     </div>`;
   return div;
@@ -812,11 +1036,6 @@ function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;'
 
 // ---------- Master render ----------
 function render(){
-  // work mode
-  const mode = state.workMode[todayKey()];
-  document.getElementById('modeOffice').classList.toggle('active', mode==='office');
-  document.getElementById('modeWFH').classList.toggle('active', mode==='wfh');
-
   // Today tab (stats always reflect actual today, regardless of viewed date)
   const realTodayTasks = state.tasks.filter(t=>t.date===todayKey());
   const doneCount = realTodayTasks.filter(t=>t.done).length;
@@ -881,14 +1100,113 @@ function render(){
   if(state.habits.length===0){ hc.innerHTML = '<div class="card"><div class="empty">No habits yet — add your first one above.</div></div>'; }
   state.habits.forEach(h=>hc.appendChild(renderHabitBlock(h)));
 
-  // Tasks tab
+  // Tasks tab (grouped by category)
   const tlf = document.getElementById('taskListFull'); tlf.innerHTML='';
   ['all','open','done'].forEach(f=>document.getElementById('filt-'+f).style.opacity = (taskFilter===f?1:0.5));
   let filtered = state.tasks;
   if(taskFilter==='open') filtered = state.tasks.filter(t=>!t.done);
   if(taskFilter==='done') filtered = state.tasks.filter(t=>t.done);
   if(filtered.length===0){ tlf.innerHTML = '<div class="empty">No tasks here.</div>'; }
-  [...filtered].reverse().forEach(t=>tlf.appendChild(renderTaskRow(t)));
+  else{
+    const categoryOrder = ['Office Work','Personal Project','Homemaking','Wellbeing'];
+    categoryOrder.forEach(cat=>{
+      const inCat = filtered.filter(t=>(t.category||'Office Work')===cat);
+      if(inCat.length===0) return;
+      const info = CATEGORY_INFO[cat];
+      const section = document.createElement('div');
+      section.style.marginBottom = '18px';
+      section.innerHTML = `<div style="font-weight:700; font-size:0.85rem; margin-bottom:4px; color:${info.color};">${info.emoji} ${cat}</div>`;
+      const listWrap = document.createElement('div');
+      [...inCat].reverse().forEach(t=>listWrap.appendChild(renderTaskRow(t)));
+      section.appendChild(listWrap);
+      tlf.appendChild(section);
+    });
+  }
+
+  // Planning tab: Monthly Calendar
+  const [cy, cm] = viewMonth.split('-').map(Number);
+  const calLabelDate = new Date(cy, cm-1, 1);
+  document.getElementById('calMonthLabel').textContent = calLabelDate.toLocaleDateString('en-US',{ month:'long', year:'numeric' });
+  const calGrid = document.getElementById('calGrid'); calGrid.innerHTML='';
+  const firstWeekday = new Date(cy, cm-1, 1).getDay();
+  const daysInCalMonth = new Date(cy, cm, 0).getDate();
+  for(let i=0;i<firstWeekday;i++){
+    const blank = document.createElement('div'); blank.className='cal-cell empty';
+    calGrid.appendChild(blank);
+  }
+  for(let d=1; d<=daysInCalMonth; d++){
+    const dateStr = `${cy}-${String(cm).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const notes = state.calendarNotes[dateStr] || [];
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell' + (dateStr===todayKey()?' today':'') + (dateStr===selectedCalDate?' selected':'');
+    cell.onclick = ()=>selectCalDay(dateStr);
+    let dots = notes.map(n=>`<div class="cal-dot" style="background:${NOTE_TYPES[n.type].color}"></div>`).join('');
+    cell.innerHTML = `<div class="cal-daynum">${d}</div><div class="cal-dots">${dots}</div>`;
+    calGrid.appendChild(cell);
+  }
+  const selDateObj = new Date(selectedCalDate+'T00:00:00');
+  document.getElementById('calSelectedLabel').textContent = selDateObj.toLocaleDateString('en-US',{ weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  const calNotes = state.calendarNotes[selectedCalDate] || [];
+  const cnl = document.getElementById('calNoteList'); cnl.innerHTML='';
+  if(calNotes.length===0){ cnl.innerHTML = '<div class="empty">No notes for this day yet.</div>'; }
+  calNotes.forEach(n=>{
+    const info = NOTE_TYPES[n.type];
+    const pill = document.createElement('span'); pill.className='cal-note-pill';
+    pill.style.background = info.soft; pill.style.color = info.color;
+    pill.innerHTML = `${info.emoji} ${escapeHtml(n.text)} <button class="icon-btn" style="padding:0; color:${info.color};" onclick="deleteCalendarNote('${selectedCalDate}',${n.id})">✕</button>`;
+    cnl.appendChild(pill);
+  });
+
+  // Planning tab: Weekly Dump
+  const wdl = document.getElementById('weeklyDumpList'); wdl.innerHTML='';
+  if(state.weeklyDump.length===0){ wdl.innerHTML = '<div class="empty">Nothing dumped yet — jot down anything for the coming week.</div>'; }
+  state.weeklyDump.forEach(item=>{
+    const row = document.createElement('div'); row.className='row';
+    row.innerHTML = `<div class="check ${item.done?'done':''}" onclick="toggleWeeklyDump(${item.id})">${item.done?'✓':''}</div>
+      <div class="name" style="${item.done?'text-decoration:line-through;color:var(--ink-soft)':''}">${escapeHtml(item.text)}</div>
+      <button class="icon-btn" onclick="deleteWeeklyDump(${item.id})">✕</button>`;
+    wdl.appendChild(row);
+  });
+
+  // Planning tab: Shopping List
+  const shl = document.getElementById('shoppingListEl'); shl.innerHTML='';
+  if(state.shoppingList.length===0){ shl.innerHTML = '<div class="empty">Shopping list is empty.</div>'; }
+  state.shoppingList.forEach(item=>{
+    const row = document.createElement('div'); row.className='row';
+    row.innerHTML = `<div class="check ${item.done?'done':''}" onclick="toggleShoppingItem(${item.id})">${item.done?'✓':''}</div>
+      <div class="name" style="${item.done?'text-decoration:line-through;color:var(--ink-soft)':''}">🛍️ ${escapeHtml(item.text)}</div>
+      <button class="icon-btn" onclick="deleteShoppingItem(${item.id})">✕</button>`;
+    shl.appendChild(row);
+  });
+
+  // Planning tab: Weekend Plan
+  ['saturday','sunday'].forEach(day=>{
+    const listEl = document.getElementById(day==='saturday'?'satList':'sunList');
+    listEl.innerHTML='';
+    if(state.weekend[day].length===0){ listEl.innerHTML = '<div class="empty">Nothing planned yet.</div>'; return; }
+    state.weekend[day].forEach(item=>{
+      const row = document.createElement('div'); row.className='row';
+      row.innerHTML = `<div class="check ${item.done?'done':''}" onclick="toggleWeekendItem('${day}',${item.id})">${item.done?'✓':''}</div>
+        <div class="name" style="${item.done?'text-decoration:line-through;color:var(--ink-soft)':''}">${escapeHtml(item.text)}</div>
+        <button class="icon-btn" onclick="deleteWeekendItem('${day}',${item.id})">✕</button>`;
+      listEl.appendChild(row);
+    });
+  });
+
+  // Planning tab: Monthly Reflection
+  const [my_, mm_] = viewMonth.split('-').map(Number);
+  const monthLabelDate = new Date(my_, mm_-1, 1);
+  document.getElementById('monthLabel').textContent = monthLabelDate.toLocaleDateString('en-US',{ month:'long', year:'numeric' });
+  const mLog = getMonthLog(viewMonth);
+  document.getElementById('monthThemeInput').value = mLog.theme || '';
+  const mhl = document.getElementById('monthHighlightList'); mhl.innerHTML='';
+  if(mLog.highlights.length===0){ mhl.innerHTML = '<div class="empty">No highlights yet for this month.</div>'; }
+  mLog.highlights.forEach(h=>{
+    const row = document.createElement('div'); row.className='row';
+    row.innerHTML = `<div class="name">📌 ${escapeHtml(h.text)}</div>
+      <button class="icon-btn" onclick="deleteMonthHighlight(${h.id})">✕</button>`;
+    mhl.appendChild(row);
+  });
 
   // Finance tab
   document.getElementById('jointBudget').value = state.finance.joint.budget || '';
