@@ -165,6 +165,7 @@ button{ font-family:'Karla',sans-serif; cursor:pointer; }
 .cat-breakdown-top{ display:flex; justify-content:space-between; font-size:0.75rem; color:var(--ink-soft); margin-bottom:3px; }
 .cat-bar-bg{ height:6px; background:var(--surface-alt); border-radius:6px; overflow:hidden; }
 .cat-bar-fill{ height:100%; background:var(--finance); border-radius:6px; }
+.exp-error{ color:#B4534A; font-size:0.78rem; margin:-4px 0 8px; min-height:1em; }
 
 /* ---------- Goals ---------- */
 .goal-card{ border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:12px; }
@@ -461,6 +462,13 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
 
   <!-- FINANCE -->
   <div class="panel" id="panel-finance">
+    <div class="card" style="margin-bottom:14px;">
+      <div class="add-row" style="align-items:center; margin-bottom:0;">
+        <button class="icon-btn" onclick="shiftMonth(-1)" title="Previous month">← Prev</button>
+        <div id="financeMonthLabel" style="font-family:'Fraunces',serif; font-weight:600; font-size:1.1rem; flex:1; text-align:center;"></div>
+        <button class="icon-btn" onclick="shiftMonth(1)" title="Next month">Next →</button>
+      </div>
+    </div>
     <div class="finance-cols">
       <div>
         <div class="card">
@@ -478,14 +486,12 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
           <div class="bar-bg"><div class="bar-fill" id="jointBar" style="width:0%"></div></div>
           <div class="add-row" style="margin-top:14px;">
             <input type="text" id="jointExpName" placeholder="Expense">
-            <input type="number" id="jointExpAmt" placeholder="₹">
-            <select id="jointExpCat">
-              <option>Housing</option><option>Groceries</option><option>Utilities</option>
-              <option>Transport</option><option>Insurance</option><option>Dining Out</option>
-              <option>Entertainment</option><option>Healthcare</option><option>Travel</option><option>Other</option>
-            </select>
+            <input type="number" id="jointExpAmt" placeholder="₹" min="0" step="any">
+            <input type="text" id="jointExpCat" list="jointCatOptions" placeholder="Category (e.g. Petrol)">
+            <datalist id="jointCatOptions"></datalist>
             <button class="btn" onclick="addExpense('joint')">Add</button>
           </div>
+          <div class="exp-error" id="jointExpError"></div>
           <div id="jointCatBreakdown" style="margin:6px 0 10px;"></div>
           <div id="jointExpList"></div>
         </div>
@@ -506,14 +512,12 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
           <div class="bar-bg"><div class="bar-fill" id="personalBar" style="width:0%; background:var(--goals)"></div></div>
           <div class="add-row" style="margin-top:14px;">
             <input type="text" id="personalExpName" placeholder="Expense">
-            <input type="number" id="personalExpAmt" placeholder="₹">
-            <select id="personalExpCat">
-              <option>Groceries</option><option>Transport</option><option>Dining Out</option>
-              <option>Shopping</option><option>Entertainment</option><option>Healthcare</option>
-              <option>Subscriptions</option><option>Fitness</option><option>Travel</option><option>Other</option>
-            </select>
+            <input type="number" id="personalExpAmt" placeholder="₹" min="0" step="any">
+            <input type="text" id="personalExpCat" list="personalCatOptions" placeholder="Category (e.g. Petrol)">
+            <datalist id="personalCatOptions"></datalist>
             <button class="btn" onclick="addExpense('personal')">Add</button>
           </div>
+          <div class="exp-error" id="personalExpError"></div>
           <div id="personalCatBreakdown" style="margin:6px 0 10px;"></div>
           <div id="personalExpList"></div>
         </div>
@@ -600,6 +604,7 @@ auth.onAuthStateChanged(async user => {
     document.getElementById('mainApp').style.display = 'none';
   }
 });
+
 
 
 
@@ -902,14 +907,23 @@ function setBudget(type){
   state.finance[type].income = inc;
   save(); render();
 }
+const PRESET_CATEGORIES = {
+  joint: ['Housing','Groceries','Utilities','Transport','Insurance','Dining Out','Entertainment','Healthcare','Travel','Other'],
+  personal: ['Groceries','Transport','Dining Out','Shopping','Entertainment','Healthcare','Subscriptions','Fitness','Travel','Other']
+};
 function addExpense(type){
-  const name = document.getElementById(type+'ExpName').value.trim();
-  const amt = parseFloat(document.getElementById(type+'ExpAmt').value) || 0;
-  const cat = document.getElementById(type+'ExpCat').value;
-  if(!name || !amt) return;
+  const nameEl = document.getElementById(type+'ExpName');
+  const amtEl = document.getElementById(type+'ExpAmt');
+  const catEl = document.getElementById(type+'ExpCat');
+  const errEl = document.getElementById(type+'ExpError');
+  errEl.textContent = '';
+  const name = nameEl.value.trim();
+  const amt = parseFloat(amtEl.value);
+  const cat = catEl.value.trim() || 'Other';
+  if(!name){ errEl.textContent = 'Enter what the expense was for.'; return; }
+  if(!amt || amt <= 0 || isNaN(amt)){ errEl.textContent = 'Enter a valid amount greater than 0.'; return; }
   state.finance[type].expenses.push({ id:Date.now(), name, amt, cat, date: todayKey() });
-  document.getElementById(type+'ExpName').value='';
-  document.getElementById(type+'ExpAmt').value='';
+  nameEl.value=''; amtEl.value=''; catEl.value='';
   save(); render();
 }
 function deleteExpense(type,id){
@@ -918,7 +932,8 @@ function deleteExpense(type,id){
 }
 function renderFinanceCol(type){
   const f = state.finance[type];
-  const spent = f.expenses.reduce((s,e)=>s+e.amt,0);
+  const monthExpenses = f.expenses.filter(e => e.date.slice(0,7) === viewMonth);
+  const spent = monthExpenses.reduce((s,e)=>s+e.amt,0);
   const saved = (f.income||0) - spent;
   document.getElementById(type+'Spent').textContent = '₹'+spent.toFixed(0);
   document.getElementById(type+'BudgetShow').textContent = '₹'+f.budget.toFixed(0);
@@ -929,12 +944,16 @@ function renderFinanceCol(type){
   bar.style.width = pct+'%';
   bar.classList.toggle('over', f.budget>0 && spent>f.budget);
 
-  // category breakdown
+  // category suggestions (presets + any custom ones used before)
+  const usedCats = new Set([...PRESET_CATEGORIES[type], ...f.expenses.map(e=>e.cat)]);
+  document.getElementById(type+'CatOptions').innerHTML = [...usedCats].map(c=>`<option value="${escapeHtml(c)}">`).join('');
+
+  // category breakdown (this month only)
   const breakdown = document.getElementById(type+'CatBreakdown');
   breakdown.innerHTML = '';
-  if(f.expenses.length>0){
+  if(monthExpenses.length>0){
     const byCat = {};
-    f.expenses.forEach(e=>{ byCat[e.cat] = (byCat[e.cat]||0) + e.amt; });
+    monthExpenses.forEach(e=>{ byCat[e.cat] = (byCat[e.cat]||0) + e.amt; });
     const maxCat = Math.max(...Object.values(byCat));
     Object.entries(byCat).sort((a,b)=>b[1]-a[1]).forEach(([cat,amt])=>{
       const row = document.createElement('div'); row.className='cat-breakdown-row';
@@ -946,8 +965,8 @@ function renderFinanceCol(type){
 
   const list = document.getElementById(type+'ExpList');
   list.innerHTML='';
-  if(f.expenses.length===0){ list.innerHTML = '<div class="empty">No expenses logged yet.</div>'; return; }
-  [...f.expenses].reverse().forEach(e=>{
+  if(monthExpenses.length===0){ list.innerHTML = '<div class="empty">No expenses logged for this month yet.</div>'; return; }
+  [...monthExpenses].reverse().forEach(e=>{
     const row = document.createElement('div'); row.className='row';
     row.innerHTML = `<div class="name">${escapeHtml(e.name)}</div>
       <span class="meta">${escapeHtml(e.cat)}</span>
@@ -1209,6 +1228,8 @@ function render(){
   });
 
   // Finance tab
+  const [fy, fm] = viewMonth.split('-').map(Number);
+  document.getElementById('financeMonthLabel').textContent = new Date(fy, fm-1, 1).toLocaleDateString('en-US',{ month:'long', year:'numeric' });
   document.getElementById('jointBudget').value = state.finance.joint.budget || '';
   document.getElementById('jointIncome').value = state.finance.joint.income || '';
   document.getElementById('personalBudget').value = state.finance.personal.budget || '';
