@@ -417,6 +417,11 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
     <div class="card">
       <h2><span class="dot" style="background:var(--tasks)"></span>🗒️ Weekly Dump</h2>
       <p style="color:var(--ink-soft); font-size:0.85rem; margin-top:-8px;">Brain-dump everything for the coming week here, then move items into daily tasks as you get to them.</p>
+      <div class="add-row" style="align-items:center;">
+        <button class="icon-btn" onclick="shiftWeekend(-1)" title="Previous week">← Prev Week</button>
+        <div id="weeklyDumpWeekLabel" style="font-family:'Fraunces',serif; font-weight:600; font-size:1rem; flex:1; text-align:center;"></div>
+        <button class="icon-btn" onclick="shiftWeekend(1)" title="Next week">Next Week →</button>
+      </div>
       <div class="add-row">
         <input type="text" id="weeklyDumpInput" placeholder="Something to do this week...">
         <button class="btn" onclick="addWeeklyDump()">Add</button>
@@ -435,9 +440,14 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
 
     <div class="card">
       <h2><span class="dot" style="background:var(--goals)"></span>🌤️ Weekend Plan</h2>
-      <div class="grid2">
+      <div class="add-row" style="align-items:center;">
+        <button class="icon-btn" onclick="shiftWeekend(-1)" title="Previous weekend">← Prev Week</button>
+        <div id="weekendLabel" style="font-family:'Fraunces',serif; font-weight:600; font-size:1rem; flex:1; text-align:center;"></div>
+        <button class="icon-btn" onclick="shiftWeekend(1)" title="Next weekend">Next Week →</button>
+      </div>
+      <div class="grid2" style="margin-top:10px;">
         <div>
-          <div style="font-weight:700; font-size:0.85rem; margin-bottom:6px; color:var(--ink-soft);">Saturday</div>
+          <div style="font-weight:700; font-size:0.85rem; margin-bottom:6px; color:var(--ink-soft);" id="satLabel">Saturday</div>
           <div class="add-row">
             <input type="text" id="satInput" placeholder="Add a plan...">
             <button class="btn ghost" onclick="addWeekendItem('saturday')">Add</button>
@@ -445,7 +455,7 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
           <div id="satList"></div>
         </div>
         <div>
-          <div style="font-weight:700; font-size:0.85rem; margin-bottom:6px; color:var(--ink-soft);">Sunday</div>
+          <div style="font-weight:700; font-size:0.85rem; margin-bottom:6px; color:var(--ink-soft);" id="sunLabel">Sunday</div>
           <div class="add-row">
             <input type="text" id="sunInput" placeholder="Add a plan...">
             <button class="btn ghost" onclick="addWeekendItem('sunday')">Add</button>
@@ -621,11 +631,13 @@ auth.onAuthStateChanged(async user => {
 
 
 
+
+
 let state = {
   tasks: [], habits: [], goals: [], chores: [],
   finance: { joint: { budget:0, income:0, expenses:[] }, personal: { budget:0, income:0, expenses:[] }, savingsGoals: [] },
   workMode: {}, dailyLog: {},
-  weeklyDump: [], shoppingList: [], weekend: { saturday:[], sunday:[] }, monthlyLog: {},
+  weeklyDump: {}, shoppingList: [], weekend: {}, monthlyLog: {},
   calendarNotes: {}
 };
 let taskFilter = 'all';
@@ -636,6 +648,24 @@ function fmtMonth(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padSta
 const todayKey = () => fmtDate(new Date());
 let viewDate = todayKey();
 let viewMonth = todayKey().slice(0,7); // YYYY-MM
+function nextOrCurrentSaturday(d){
+  const day = d.getDay(); // 0=Sun ... 6=Sat
+  const diff = (6 - day + 7) % 7;
+  const result = new Date(d);
+  result.setDate(result.getDate() + diff);
+  return result;
+}
+let viewWeekendSat = fmtDate(nextOrCurrentSaturday(new Date()));
+function shiftWeekend(deltaWeeks){
+  const d = new Date(viewWeekendSat+'T00:00:00');
+  d.setDate(d.getDate() + deltaWeeks*7);
+  viewWeekendSat = fmtDate(d);
+  render();
+}
+function getWeekendData(weekKey){
+  if(!state.weekend[weekKey]) state.weekend[weekKey] = { saturday:[], sunday:[] };
+  return state.weekend[weekKey];
+}
 let selectedCalDate = todayKey();
 
 function shiftViewDate(delta){
@@ -674,9 +704,22 @@ function migrateState(){
   if(!state.chores) state.chores = [];
   if(!state.dailyLog) state.dailyLog = {};
   state.tasks.forEach(t=>{ if(!t.category) t.category='Office Work'; });
-  if(!state.weeklyDump) state.weeklyDump = [];
+  if(!state.weeklyDump) state.weeklyDump = {};
+  // migrate old flat array weeklyDump into new week-keyed structure
+  if(Array.isArray(state.weeklyDump)){
+    const oldItems = state.weeklyDump;
+    const key = fmtDate(nextOrCurrentSaturday(new Date()));
+    state.weeklyDump = oldItems.length ? { [key]: oldItems } : {};
+  }
   if(!state.shoppingList) state.shoppingList = [];
-  if(!state.weekend) state.weekend = { saturday:[], sunday:[] };
+  if(!state.weekend) state.weekend = {};
+  // migrate old flat {saturday:[],sunday:[]} structure into new week-keyed structure
+  if(Array.isArray(state.weekend.saturday) || Array.isArray(state.weekend.sunday)){
+    const oldSat = state.weekend.saturday || [];
+    const oldSun = state.weekend.sunday || [];
+    const key = fmtDate(nextOrCurrentSaturday(new Date()));
+    state.weekend = { [key]: { saturday: oldSat, sunday: oldSun } };
+  }
   if(!state.monthlyLog) state.monthlyLog = {};
   if(!state.calendarNotes) state.calendarNotes = {};
 }
@@ -808,15 +851,25 @@ function toggleChoreDay(choreId, dateStr){
 function deleteChore(id){ state.chores = state.chores.filter(x=>x.id!==id); save(); render(); }
 
 // ---------- Weekly Dump ----------
+function getWeeklyDumpArr(weekKey){
+  if(!state.weeklyDump[weekKey]) state.weeklyDump[weekKey] = [];
+  return state.weeklyDump[weekKey];
+}
 function addWeeklyDump(){
   const el = document.getElementById('weeklyDumpInput');
   const text = el.value.trim(); if(!text) return;
-  state.weeklyDump.push({ id: Date.now(), text, done:false });
+  getWeeklyDumpArr(viewWeekendSat).push({ id: Date.now(), text, done:false });
   el.value=''; save(); render();
 }
-function toggleWeeklyDump(id){ const item = state.weeklyDump.find(x=>x.id===id); item.done=!item.done; save(); render(); }
-function deleteWeeklyDump(id){ state.weeklyDump = state.weeklyDump.filter(x=>x.id!==id); save(); render(); }
-function clearWeeklyDump(){ state.weeklyDump = []; save(); render(); }
+function toggleWeeklyDump(id){
+  const item = getWeeklyDumpArr(viewWeekendSat).find(x=>x.id===id);
+  item.done=!item.done; save(); render();
+}
+function deleteWeeklyDump(id){
+  state.weeklyDump[viewWeekendSat] = getWeeklyDumpArr(viewWeekendSat).filter(x=>x.id!==id);
+  save(); render();
+}
+function clearWeeklyDump(){ state.weeklyDump[viewWeekendSat] = []; save(); render(); }
 
 // ---------- Shopping List ----------
 function addShoppingItem(){
@@ -833,11 +886,18 @@ function clearShoppingList(){ state.shoppingList = state.shoppingList.filter(x=>
 function addWeekendItem(day){
   const el = document.getElementById(day==='saturday'?'satInput':'sunInput');
   const text = el.value.trim(); if(!text) return;
-  state.weekend[day].push({ id: Date.now(), text, done:false });
+  getWeekendData(viewWeekendSat)[day].push({ id: Date.now(), text, done:false });
   el.value=''; save(); render();
 }
-function toggleWeekendItem(day,id){ const item = state.weekend[day].find(x=>x.id===id); item.done=!item.done; save(); render(); }
-function deleteWeekendItem(day,id){ state.weekend[day] = state.weekend[day].filter(x=>x.id!==id); save(); render(); }
+function toggleWeekendItem(day,id){
+  const item = getWeekendData(viewWeekendSat)[day].find(x=>x.id===id);
+  item.done=!item.done; save(); render();
+}
+function deleteWeekendItem(day,id){
+  const wd = getWeekendData(viewWeekendSat);
+  wd[day] = wd[day].filter(x=>x.id!==id);
+  save(); render();
+}
 
 // ---------- Monthly Reflection ----------
 function shiftMonth(delta){
@@ -1213,10 +1273,17 @@ function render(){
     cnl.appendChild(pill);
   });
 
+  // Shared weekend/week dates (used by both Weekly Dump and Weekend Plan below)
+  const satDateObj = new Date(viewWeekendSat+'T00:00:00');
+  const sunDateObj = new Date(satDateObj); sunDateObj.setDate(sunDateObj.getDate()+1);
+
   // Planning tab: Weekly Dump
+  document.getElementById('weeklyDumpWeekLabel').textContent =
+    satDateObj.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' – ' + sunDateObj.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   const wdl = document.getElementById('weeklyDumpList'); wdl.innerHTML='';
-  if(state.weeklyDump.length===0){ wdl.innerHTML = '<div class="empty">Nothing dumped yet — jot down anything for the coming week.</div>'; }
-  state.weeklyDump.forEach(item=>{
+  const weeklyDumpItems = getWeeklyDumpArr(viewWeekendSat);
+  if(weeklyDumpItems.length===0){ wdl.innerHTML = '<div class="empty">Nothing dumped yet — jot down anything for the coming week.</div>'; }
+  weeklyDumpItems.forEach(item=>{
     const row = document.createElement('div'); row.className='row';
     row.innerHTML = `<div class="check ${item.done?'done':''}" onclick="toggleWeeklyDump(${item.id})">${item.done?'✓':''}</div>
       <div class="name" style="${item.done?'text-decoration:line-through;color:var(--ink-soft)':''}">${escapeHtml(item.text)}</div>
@@ -1236,11 +1303,17 @@ function render(){
   });
 
   // Planning tab: Weekend Plan
+  const sunDateKey = fmtDate(sunDateObj);
+  document.getElementById('weekendLabel').textContent =
+    satDateObj.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' – ' + sunDateObj.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  document.getElementById('satLabel').textContent = 'Saturday ' + satDateObj.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  document.getElementById('sunLabel').textContent = 'Sunday ' + sunDateObj.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const weekendData = getWeekendData(viewWeekendSat);
   ['saturday','sunday'].forEach(day=>{
     const listEl = document.getElementById(day==='saturday'?'satList':'sunList');
     listEl.innerHTML='';
-    if(state.weekend[day].length===0){ listEl.innerHTML = '<div class="empty">Nothing planned yet.</div>'; return; }
-    state.weekend[day].forEach(item=>{
+    if(weekendData[day].length===0){ listEl.innerHTML = '<div class="empty">Nothing planned yet.</div>'; return; }
+    weekendData[day].forEach(item=>{
       const row = document.createElement('div'); row.className='row';
       row.innerHTML = `<div class="check ${item.done?'done':''}" onclick="toggleWeekendItem('${day}',${item.id})">${item.done?'✓':''}</div>
         <div class="name" style="${item.done?'text-decoration:line-through;color:var(--ink-soft)':''}">${escapeHtml(item.text)}</div>
