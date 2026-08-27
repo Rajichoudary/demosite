@@ -360,6 +360,17 @@ footer.note{ text-align:center; color:var(--ink-soft); font-size:0.75rem; margin
         <input type="date" id="taskDate">
         <button class="btn" onclick="addTask()">Add</button>
       </div>
+      <div class="add-row" style="align-items:center;">
+        <button class="btn ghost" onclick="setTaskViewMode('day')" id="tvm-day">📅 Day view</button>
+        <button class="btn ghost" onclick="setTaskViewMode('all')" id="tvm-all">🗂️ All days</button>
+      </div>
+      <div class="add-row" style="align-items:center;" id="taskDateNavRow">
+        <button class="icon-btn" onclick="shiftViewDate(-1)" title="Previous day">← Prev</button>
+        <input type="date" id="taskViewDate">
+        <button class="icon-btn" onclick="shiftViewDate(1)" title="Next day">Next →</button>
+        <button class="btn ghost" onclick="jumpToday()">Jump to today</button>
+      </div>
+      <div style="font-weight:700; font-size:0.85rem; margin:4px 0 10px; color:var(--ink-soft);" id="taskViewingLabel"></div>
       <div style="display:flex; gap:8px; margin-bottom:10px;">
         <button class="btn ghost" onclick="setTaskFilter('all')" id="filt-all">All</button>
         <button class="btn ghost" onclick="setTaskFilter('open')" id="filt-open">Open</button>
@@ -608,6 +619,8 @@ auth.onAuthStateChanged(async user => {
 
 
 
+
+
 let state = {
   tasks: [], habits: [], goals: [], chores: [],
   finance: { joint: { budget:0, income:0, expenses:[] }, personal: { budget:0, income:0, expenses:[] }, savingsGoals: [] },
@@ -616,7 +629,11 @@ let state = {
   calendarNotes: {}
 };
 let taskFilter = 'all';
-const todayKey = () => new Date().toISOString().slice(0,10);
+let taskViewMode = 'day'; // 'day' or 'all'
+function setTaskViewMode(m){ taskViewMode = m; render(); }
+function fmtDate(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function fmtMonth(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+const todayKey = () => fmtDate(new Date());
 let viewDate = todayKey();
 let viewMonth = todayKey().slice(0,7); // YYYY-MM
 let selectedCalDate = todayKey();
@@ -624,13 +641,21 @@ let selectedCalDate = todayKey();
 function shiftViewDate(delta){
   const d = new Date(viewDate+'T00:00:00');
   d.setDate(d.getDate()+delta);
-  viewDate = d.toISOString().slice(0,10);
+  viewDate = fmtDate(d);
   document.getElementById('viewDate').value = viewDate;
+  document.getElementById('taskViewDate').value = viewDate;
   render();
 }
-function jumpToday(){ viewDate = todayKey(); document.getElementById('viewDate').value = viewDate; render(); }
+function jumpToday(){
+  viewDate = todayKey();
+  document.getElementById('viewDate').value = viewDate;
+  document.getElementById('taskViewDate').value = viewDate;
+  render();
+}
 document.getElementById('viewDate').value = viewDate;
+document.getElementById('taskViewDate').value = viewDate;
 document.getElementById('viewDate').onchange = (e)=>{ viewDate = e.target.value; render(); };
+document.getElementById('taskViewDate').onchange = (e)=>{ viewDate = e.target.value; render(); };
 
 async function loadAll(){
   try{
@@ -733,7 +758,7 @@ function deleteHabit(id){ state.habits = state.habits.filter(x=>x.id!==id); save
 function calcStreak(h){
   let streak=0; let d = new Date();
   while(true){
-    const key = d.toISOString().slice(0,10);
+    const key = fmtDate(d);
     if(h.log[key]){ streak++; d.setDate(d.getDate()-1); } else break;
   }
   return streak;
@@ -818,7 +843,7 @@ function deleteWeekendItem(day,id){ state.weekend[day] = state.weekend[day].filt
 function shiftMonth(delta){
   const [y,m] = viewMonth.split('-').map(Number);
   const d = new Date(y, m-1+delta, 1);
-  viewMonth = d.toISOString().slice(0,7);
+  viewMonth = fmtMonth(d);
   selectedCalDate = viewMonth + '-01';
   render();
 }
@@ -882,7 +907,7 @@ function renderHabitBlock(h){
   const daysInMonth = new Date(year, month+1, 0).getDate();
   for(let d=1; d<=daysInMonth; d++){
     const dateObj = new Date(year, month, d);
-    const key = dateObj.toISOString().slice(0,10);
+    const key = fmtDate(dateObj);
     const filled = !!h.log[key];
     const isToday = key === todayKey();
     const rot = (d%2===0? -6: 6);
@@ -1119,12 +1144,23 @@ function render(){
   if(state.habits.length===0){ hc.innerHTML = '<div class="card"><div class="empty">No habits yet — add your first one above.</div></div>'; }
   state.habits.forEach(h=>hc.appendChild(renderHabitBlock(h)));
 
-  // Tasks tab (grouped by category)
+  // Tasks tab (grouped by category, filtered to viewDate or all days)
+  document.getElementById('tvm-day').style.opacity = taskViewMode==='day' ? 1 : 0.5;
+  document.getElementById('tvm-all').style.opacity = taskViewMode==='all' ? 1 : 0.5;
+  document.getElementById('taskDateNavRow').style.display = taskViewMode==='day' ? 'flex' : 'none';
+  const taskLabel = document.getElementById('taskViewingLabel');
+  if(taskViewMode==='all'){ taskLabel.textContent = 'Showing: All days'; }
+  else if(viewDate === todayKey()) taskLabel.textContent = 'Showing: Today';
+  else{
+    const d = new Date(viewDate+'T00:00:00');
+    taskLabel.textContent = 'Showing: ' + d.toLocaleDateString('en-US',{ weekday:'long', month:'long', day:'numeric' });
+  }
   const tlf = document.getElementById('taskListFull'); tlf.innerHTML='';
   ['all','open','done'].forEach(f=>document.getElementById('filt-'+f).style.opacity = (taskFilter===f?1:0.5));
-  let filtered = state.tasks;
-  if(taskFilter==='open') filtered = state.tasks.filter(t=>!t.done);
-  if(taskFilter==='done') filtered = state.tasks.filter(t=>t.done);
+  let filtered = taskViewMode==='day' ? state.tasks.filter(t=>t.date===viewDate) : state.tasks.slice();
+  if(taskFilter==='open') filtered = filtered.filter(t=>!t.done);
+  if(taskFilter==='done') filtered = filtered.filter(t=>t.done);
+  if(taskViewMode==='all') filtered.sort((a,b)=>b.date.localeCompare(a.date));
   if(filtered.length===0){ tlf.innerHTML = '<div class="empty">No tasks here.</div>'; }
   else{
     const categoryOrder = ['Office Work','Personal Project','Homemaking','Wellbeing'];
@@ -1136,7 +1172,8 @@ function render(){
       section.style.marginBottom = '18px';
       section.innerHTML = `<div style="font-weight:700; font-size:0.85rem; margin-bottom:4px; color:${info.color};">${info.emoji} ${cat}</div>`;
       const listWrap = document.createElement('div');
-      [...inCat].reverse().forEach(t=>listWrap.appendChild(renderTaskRow(t)));
+      const orderedCat = taskViewMode==='all' ? inCat : [...inCat].reverse();
+      orderedCat.forEach(t=>listWrap.appendChild(renderTaskRow(t)));
       section.appendChild(listWrap);
       tlf.appendChild(section);
     });
